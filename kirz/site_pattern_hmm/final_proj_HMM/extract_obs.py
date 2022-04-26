@@ -59,17 +59,53 @@ def extract_O(variable_positions, polarized_genotype_matrix):
     # Indexed from 1 - 400
     Windows = genotype_matrix_windows(rep_id_1_var_pos, rep_id_1_polarized_geno_mat)
 
-    print(Windows[1])
-    print(len(Windows[1])-2)
-    print('This should be smaller than 50,000 {0}'.format(rep_id_1_var_pos[1352]))
-    print('This should be larger than 50,000 {0}'.format(rep_id_1_var_pos[1353]))
-    print(Windows[1][2])
-    print(Windows[1][-1])
-    wind_1_idx = np.asarray(Windows[1][2:], dtype=np.int32)
-    print(wind_1_idx)
-    print(wind_1_idx.shape)
-    print(rep_id_1_polarized_geno_mat)
-    print(rep_id_1_polarized_geno_mat.shape)
+    #print(Windows[1])
+    #print(len(Windows[1])-2)
+    #print('This should be smaller than 50,000 {0}'.format(rep_id_1_var_pos[1352]))
+    #print('This should be larger than 50,000 {0}'.format(rep_id_1_var_pos[1353]))
+    #print(Windows[1][2])
+    #print(Windows[1][-1])
+    #wind_1_idx = np.asarray(Windows[400][2:], dtype=np.int32)
+    #wind_1_geno_mat = rep_id_1_polarized_geno_mat[wind_1_idx,:]
+    #print(wind_1_idx)
+    #print(wind_1_idx.shape)
+    #print(wind_1_geno_mat)
+    #print(wind_1_geno_mat.shape)
+
+
+
+    # Intialize observed sequence.
+    obs_seq = []
+    # Define what C would look like.
+    c_pattern = np.array([0, 0, 1, 1, 0])
+    # Iterate through all the windows by key.
+    for key in Windows:
+        # Extract the values for the window key.
+        window_vals = Windows[key]
+        # Print the tracker for me.
+        print('there are {0} variants in window {1}'.format(len(window_vals), key))
+        # If there are variants in that window.
+        if len(window_vals) > 2:
+            # Extract variable positions in that window.
+            variants = np.asarray(window_vals[2:], dtype=np.int32)
+            # Subset the genotype matrix for that window.
+            window_geno_mat = rep_id_1_polarized_geno_mat[variants,:]
+            # Define what C matrix would look like given an arbitrary number of variants.
+            c_mat = np.tile(c_pattern, (window_geno_mat.shape[0], 1))
+            # If the C matrix is equal to the windowed matrix declare it consistent.
+            if np.array_equal(c_mat, window_geno_mat) == True:
+                print('C')
+                obs_seq.append('C')
+            # Else declare the window non-cosistent.
+            else:
+                print('N')
+                obs_seq.append('N')
+        # If there are no variants in the window declare in non-consistent.
+        else:
+            print('N')
+            obs_seq.append('N')
+
+
 
 
 
