@@ -4,7 +4,9 @@ ___
 1. Not sure if path in shell script will work in OSCAR, was copied over from CS project
 2. Could it be more effective if I stochastically modified the chances in the naive HMM a little first?
 
-
+## Easy Testing command
+`python3 extract_obs.py ../cs282_sim_data/rep_id_1_intro_pos.csv.gz ../cs282_sim_data/rep_id_1_polarized_geno_mat.csv.gz
+`
 ## Input
 ###ancestries
 a list of 4 haplotype sequences (ancestries)
