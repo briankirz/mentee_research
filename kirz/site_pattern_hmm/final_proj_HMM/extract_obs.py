@@ -1,5 +1,8 @@
 import sys
 import gzip
+import numpy as np
+import pandas as pd
+
 
 # Define a function to split a genotype matrix into non-overlapping windows.
 def genotype_matrix_windows(
@@ -30,20 +33,48 @@ def genotype_matrix_windows(
 
 
 # Extracts the observed sequence (binned)
-# Input: var_pos - an array of all variable positions (filename rep_id_{REP}_var_pos.csv.gz)
-#        pol_gen_mat - a polarized genotype matrix (filename rep_id_{REP}_polarized_geno_mat.csv.gz)
+# Variable positions corresponds to the first index in the genotype matrix
+# Different from the intro positions, which are just the start and stop positions of all introgressed segements
+# Input: var_pos - filepath to the array of all variable positions (filename rep_id_{REP}_var_pos.csv.gz)
+#        pol_gen_mat - filepath to the polarized genotype matrix (filename rep_id_{REP}_polarized_geno_mat.csv.gz)
 # Output: the observed sequence and a dictionary containing information about it
 def extract_O(variable_positions, polarized_genotype_matrix):
-    with gzip.open(variable_positions, 'rb') as var_pos, open(polarized_genotype_matrix, 'w') as pol_gen_mat:
-        vp = []
-        for line in var_pos:
-            vp.append(line)
 
-        # pgm = []
-        # for line in pol_gen_mat:
-        #     pgm.append(line)
+    # Load the mutated tree sequence.
+    # rep_id_1_mts = tskit.load('./cs282_sim_data/rep_id_1_mut_tree_seq.ts')
+    # Load the variable positions.
+    rep_id_1_var_pos = np.loadtxt('../cs282_sim_data/rep_id_1_var_pos.csv.gz', delimiter=',')
+    # Load the genotype matrix.
+    rep_id_1_polarized_geno_mat = np.loadtxt('../cs282_sim_data/rep_id_1_polarized_geno_mat.csv.gz', dtype=int,
+                                             delimiter=',')
+    # Load the introgressed region dataframe.
+    rep_id_1_intro_pos_df = pd.read_csv('../cs282_sim_data/rep_id_1_intro_pos.csv.gz', float_precision='round_trip')
+    # Inspect the tree-sequence summary.
+    # rep_id_1_mts
 
-    print(vp)
+    # Typically 50k long
+    # print(rep_id_1_var_pos)
+    print(rep_id_1_polarized_geno_mat)
+
+    # Indexed from 1 - 400
+    Windows = genotype_matrix_windows(rep_id_1_var_pos, rep_id_1_polarized_geno_mat)
+
+    print(Windows[1])
+    print(len(Windows[1])-2)
+    print('This should be smaller than 50,000 {0}'.format(rep_id_1_var_pos[1352]))
+    print('This should be larger than 50,000 {0}'.format(rep_id_1_var_pos[1353]))
+    print(Windows[1][2])
+    print(Windows[1][-1])
+    wind_1_idx = np.asarray(Windows[1][2:], dtype=np.int32)
+    print(wind_1_idx)
+    print(wind_1_idx.shape)
+    print(rep_id_1_polarized_geno_mat)
+    print(rep_id_1_polarized_geno_mat.shape)
+
+
+
+    # throw vp and pgm into genotype_matrix_windows
+
     O = 'NCNCN'
     Bin_dict = {}
     print("test")
