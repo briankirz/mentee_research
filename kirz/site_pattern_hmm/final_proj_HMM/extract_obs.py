@@ -116,6 +116,10 @@ def extract_O(variable_positions, polarized_genotype_matrix):
     print('there are {0} many consistent observations'.format(np.count_nonzero(obs_seq_array == 'C')))
     print('the consistent observations occur in window(s) {0}'.format(np.where(obs_seq_array == 'C')))
     print('the run time for generating one observed sequence is {0} seconds'.format((end-start)/float(60)))
+    # Convert the observed sequence list into one string.
+    obs_seq_str = ''.join(obs_seq)
+    print(obs_seq_str)
+    
 
 
 
