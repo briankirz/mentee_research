@@ -1,75 +1,11 @@
 import sys
 import numpy as np
+# does this work?
+import extract_obs
+import support_code as supp
 import warnings
-
 warnings.filterwarnings('ignore', message='divide by zero encountered in log')
 warnings.filterwarnings('ignore', message='invalid value encountered in double_scalars')
-
-
-# SUPPORT CODE
-# Stochastic Parameters
-# def initialize():
-#     std = 0.05
-#
-#     A = np.array([[np.random.normal(0.7, std), np.random.normal(0.3, std)],
-#                   [np.random.normal(0.4, std), np.random.normal(0.6, std)]])
-#
-#     B = np.array([[np.random.normal(0.3, std), np.random.normal(0.2, std),
-#                    np.random.normal(0.2, std), np.random.normal(0.3, std)],
-#                   [np.random.normal(0.2, std), np.random.normal(0.3, std),
-#                    np.random.normal(0.3, std), np.random.normal(0.2, std)]])
-#     pi = [np.random.normal(0.8, std), np.random.normal(0.2, std)]
-#
-#     A /= np.tile(np.sum(A, axis=1), (2, 1)).T
-#     B /= np.tile(np.sum(B, axis=1), (4, 1)).T
-#     pi /= np.sum(pi)
-#     return A, B, pi
-
-# Viterbi Algorithm (Most likely sequence)
-def viterbi(A, B, pi, Ob, N, T):
-    V = np.zeros((T, N))
-    tb = np.zeros((T, N), dtype='int')
-
-    for i in range(N):
-        V[0, i] = np.log(pi[i]) + np.log(B[i, Ob[0]])
-        tb[0, i] = -1
-
-    for t in range(1, T):
-        for j in range(N):
-            V[t, j] = np.NINF
-            for i in range(N):
-                p = V[t - 1, i] + np.log(A[i, j]) + np.log(B[j, Ob[t]])
-                if p > V[t, j]:
-                    V[t, j] = p
-                    tb[t, j] = i
-
-    logP_max = np.NINF
-
-    for j in range(N):
-        if V[-1, j] > logP_max:
-            logP_max = V[-1, j]
-            Q = [j]
-            i = j
-    for t in range(T - 2, -1, -1):
-        i = tb[t + 1, i]
-        Q.insert(0, i)
-
-    return Q, logP_max
-
-
-def compute_logP(alpha):
-    if alpha[-1][0] >= 0:
-        return np.log(np.sum(alpha[-1]))
-    else:
-        return np.log(np.sum(np.exp(alpha[-1])))
-
-
-def print_results(A, B, pi, Ob, N, T, logP_new):
-    Q, logP_max = viterbi(A, B, pi, Ob, N, T)
-    print('logP(O|lambda): {0:.2f}'.format(logP_new),
-          ''.join([str(i) for i in Q]),
-          'logP(O|Q*): {0:.2f}'.format(logP_max))
-
 
 # Calculates the alpha matrix
 def calc_alpha(A, B, pi, Ob, N, T):
@@ -231,24 +167,12 @@ def update_pi(N, gamma):
     return pi
 
 
-# Extracts the observed sequence (binned)
-# Input:
-#   loci, a list of variant positions measured in kb
-#   ancestries, a list of haplotype lists from 4 ancestries (AFR1, AFR2, TEST, NEAN) with 1s (derived) / 0s (ancestral)
-#   s, the ancestry switch rate
-# Output: the observed sequence and a dictionary containing information about it
-def extract_O(i_loci, i_ancestries, i_s):
-    O = 'NCNCN'
-    Bin_dict = {}
-    return O, Bin_dict
-
-
 # Creates a Hidden Markov Model to detect Neanderthal Introgression in modern haplotypes
 # Input:
 #   loci, a list of variant positions measured in kb
 #   ancestries, a list of haplotype lists from 4 ancestries (AFR1, AFR2, TEST, NEAN) with 1s (derived) / 0s (ancestral)
 # Output:
-#   ??
+#   TODO: Explain
 def hmm(i_loci, i_ancestries):
     loci = i_loci
     ancestries = i_ancestries
@@ -288,8 +212,8 @@ def hmm(i_loci, i_ancestries):
     # TODO: Initialize log-likelihood trackers and print initial inference
     logP_old = np.NINF
     alpha = calc_alpha(A, B, pi, Ob, N, T)
-    logP_new = compute_logP(alpha)
-    print_results(A, B, pi, Ob, N, T, logP_new)
+    logP_new = supp.compute_logP(alpha)
+    supp.print_results(A, B, pi, Ob, N, T, logP_new)
 
     # TODO: Temporary Naive Matrices (Comment out when Baum-Welch is implemented)
     # beta = calc_beta(A, B, Ob, N, T)
@@ -314,12 +238,12 @@ def hmm(i_loci, i_ancestries):
 
         # only continue iterating if performance improves
         logP_old = logP_new
-        if compute_logP(alpha) > logP_old:
+        if supp.compute_logP(alpha) > logP_old:
             A, B, pi = new_A, new_B, new_pi
-            logP_new = compute_logP(alpha)
+            logP_new = supp.compute_logP(alpha)
 
             # print current inference
-            print_results(A, B, pi, Ob, N, T, logP_new)
+            supp.print_results(A, B, pi, Ob, N, T, logP_new)
 
     # print lambda*
     print('\nA\n', A)
@@ -329,6 +253,11 @@ def hmm(i_loci, i_ancestries):
     # print('\ngamma\n', gamma)
 
     # Test for printing
+    # comparison = []
+    # for t in range(T):
+    #     comparison.append([Ob[t], gamma[t][1]])
+    # for c in range(T):
+    #     print(comparison[c])
 
 
 hmm(sys.argv[1], sys.argv[2])
