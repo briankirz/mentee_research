@@ -54,7 +54,7 @@ def extract_O(variable_positions, polarized_genotype_matrix):
 
     # Typically 50k long
     # print(rep_id_1_var_pos)
-    print(rep_id_1_polarized_geno_mat)
+    # print(rep_id_1_polarized_geno_mat)
 
     # Indexed from 1 - 400
     Windows = genotype_matrix_windows(rep_id_1_var_pos, rep_id_1_polarized_geno_mat)
