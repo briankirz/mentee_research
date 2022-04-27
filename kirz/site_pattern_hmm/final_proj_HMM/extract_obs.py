@@ -32,7 +32,7 @@ def genotype_matrix_windows(
                 break
     return windows
 
-
+# Dave was here for a sanity check.
 # Extracts the observed sequence (binned)
 # Variable positions corresponds to the first index in the genotype matrix
 # Different from the intro positions, which are just the start and stop positions of all introgressed segements
