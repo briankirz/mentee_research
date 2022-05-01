@@ -3,6 +3,7 @@ import numpy as np
 import extract_obs
 import support_code as supp
 import visualizer as vis
+import eval_accuracy as eval
 import warnings
 
 warnings.filterwarnings('ignore', message='divide by zero encountered in log')
@@ -19,8 +20,6 @@ except AttributeError:
         return minxy + np.log(np.exp(logx - minxy) + np.exp(logy - minxy))
 
 # TODO: NORMALIZATION NECESSARY
-VERY_SMALL_NUMBER = 1e-303
-LOG0 = np.log(VERY_SMALL_NUMBER)
 LOG0 = np.NINF
 
 
@@ -148,8 +147,6 @@ def calc_gamma(xi, N, T, alpha, beta):
     return gamma
 
 
-# TODO: FIX UPDATE FUNCTIONS
-
 # iteratively update A
 # A (transition) [i][j] is the sum of all the
 # transitions from i to j, normalized by the sum
@@ -177,17 +174,15 @@ def update_B(Ob, N, M, T, xi):
     B = np.zeros((N, M))
 
     for i in range(N):
-        ksum = np.zeros(M) + LOG0 # ksum[k] is the sum of all i with k
+        ksum = np.zeros(M) + LOG0  # ksum[k] is the sum of all i with k
         for t in range(T):
             k = Ob[t]
             for j in range(N):
                 ksum[k] = logaddexp(ksum[k], xi[t, i, j])
-        ksum = ksum - supp.logsum(ksum) # Normalize
+        ksum = ksum - supp.logsum(ksum)  # Normalize
         B[i, :] = ksum
     return B
 
-
-# TODO: CLEANER
 # iteratively update pi
 def update_pi(N, gamma):
     pi = np.zeros(N)
@@ -215,16 +210,25 @@ def hmm(i_loci, i_ancestries):
     p = 0.01
     # Probability of archaic ancestry conditional on all SNPs in the window being of state "C"
     u = 0.99
+    # Probability cutoff for HMM's "guess" at a true state (HMM must be >=threshold% sure hidden state introgressed)
+    threshold = .9
+    # Should results be normalized based on relative probability? Prufer leaves this unclear
+    normalized = True
+    # Primary Baum-Welch adjustment parameter, makes sure it doesn't go on too long
+    optimization_limit = 15
 
-    # TODO: Extract the sequence here and assign it to O and B_Dict
+    # TODO: Extract the sequence here and assign it to O and win_intro_percent
     # TODO: NAIVE IMPLEMENTATION HAS UNDERFLOW BUG - [:19,000] works, [:20_000] does not
     extraction = extract_obs.extract_O(1, 2)
+    # Takes the observation sequence, the first element of the tuple that extract_O returns
     O = extraction[0]
-    win_intro_percent = extraction[1]
-    true_intro_states = []
-    for key in win_intro_percent: true_intro_states.append(win_intro_percent[key])
-    tis = np.array([true_intro_states]).T
-    # O = "NNNNNNNNNNNCCCCCCCCCCCNNNNNNNNNNNNNNNNNNNNNNNCNNNCCCCNNNNNNCNNCCNNNNNNNNNNNNNNCNNCNCNCCCNNNNNNNCCCCCC"
+    # Takes the Window dictionary where window number corresponds to the percent of introgression, the second elem
+    Win_intro_percent = extraction[1]
+    # Creates an array to store those states for data display
+    true_intro_windows = []
+    for key in Win_intro_percent: true_intro_windows.append(Win_intro_percent[key])
+    # Transposes the true introgression site array and stores them in a numpy array for the purposes of display
+    tiw = np.array([true_intro_windows]).T
 
     # index letter observations for future use
     observations = ['N', 'C']
@@ -238,30 +242,29 @@ def hmm(i_loci, i_ancestries):
     convergence_threshold = 0.01
 
     # TODO: Initialize A, B, and pi
+    # TODO: DO ALL THE CALCULATIONS IN LOG SPACE TO AVOID UNDERFLOWS
+    # TODO: Randomize these slightly???
     # Transition Array (2x2)
     A = np.array(((1 - s, s), (s, 1 - s)))
+    lp_A = np.log(A)
     # Emission Probabilities (2x2)
     B = np.array(((u, 1 - u), (1 - u, u)))
+    lp_B = np.log(B)
     # Initial State Distribution (2x1)
     pi = np.array((p, 1 - p))
-    # TODO: DO ALL THE CALCULATIONS IN LOG SPACE TO AVOID UNDERFLOWS
-    # TODO: + LOG0???
     lp_pi = np.log(pi)
-    lp_A = np.log(A)
-    lp_B = np.log(B)
 
     # TODO: Initialize log-likelihood trackers and print initial inference
-    logP_old = np.NINF  # TODO: FROM COLAB
+    logP_old = LOG0
     alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T)
     logP_new = supp.logsum(alpha[T, :])
-    # logP_new = supp.compute_logP(np.exp(alpha))  # TODO: FROM COLAB, added exp to make it work
-    # supp.print_results(A, B, pi, Ob, N, T, logP_new)# Ob, N, T, logP_new) # FROM COLAB
 
-    # COMMENT THIS OUT WHEN RUNNING BAUM-WELCH
+    # NAIVE HMM
     beta = calc_beta(lp_A, lp_B, Ob, N, T)
     xi = calc_xi(lp_A, lp_B, Ob, N, T, alpha, beta)
     gamma = calc_gamma(xi, N, T, alpha, beta)
 
+    # SUB-19k Observation Sequence ONLY
     # old_alpha = old_calc_alpha(A, B, pi, Ob, N, T)
     # old_beta = old_calc_beta(A, B, Ob, N, T)
     # old_xi = old_calc_xi(A, B, Ob, N, T, old_alpha, old_beta)
@@ -269,7 +272,6 @@ def hmm(i_loci, i_ancestries):
 
     # TODO: Iterate until convergence is reached or performance decreases
     optimization_count = 0
-    optimization_limit = 5 # makes sure it doesn't go on too long
     while logP_new - logP_old > convergence_threshold and optimization_count < optimization_limit:
         if optimization_count >= 1:
             print("Optimization count " + str(optimization_count))
@@ -277,7 +279,7 @@ def hmm(i_loci, i_ancestries):
         optimization_count += 1
 
         # calculate variables
-        bw_alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T) # MIGHT NEED TO CUT THIS
+        bw_alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T)
         bw_beta = calc_beta(lp_A, lp_B, Ob, N, T)
         bw_xi = calc_xi(lp_A, lp_B, Ob, N, T, bw_alpha, bw_beta)
         bw_gamma = calc_gamma(bw_xi, N, T, bw_alpha, bw_beta)
@@ -297,29 +299,25 @@ def hmm(i_loci, i_ancestries):
             lp_A, lp_B, lp_pi = new_A, new_B, new_pi
             logP_new = supp.logsum(bw_alpha[T, :])
 
-
     # check to see if there was any improvement
     if optimization_count > 0:
-
-    # # print lambda*
         print('\nadjusted A\n', np.exp(lp_A))
         print('\nadjusted B\n', np.exp(lp_B))
         print('\nadjusted pi\n', np.exp(lp_pi))
-        print('______________________________')
-        print('\nnaive alpha\n', np.exp(alpha))
-        print('\nBW alpha\n', np.exp(bw_alpha))
-        print('\nnaive beta\n', np.exp(beta))
-        print('\nBW beta\n', np.exp(bw_beta))
-        print('\nnaive xi\n', np.exp(xi))
-        print('\nBW xi\n', np.exp(bw_xi))
-        print('______________________________')
-        print('\nnaive gamma\n', np.exp(gamma))
-        print('\nnaive gamma shape\n', np.exp(gamma).shape)
+        # print('______________________________')
+        # print('\nnaive alpha\n', np.exp(alpha))
+        # print('\nBW alpha\n', np.exp(bw_alpha))
+        # print('\nnaive beta\n', np.exp(beta))
+        # print('\nBW beta\n', np.exp(bw_beta))
+        # print('\nnaive xi\n', np.exp(xi))
+        # print('\nBW xi\n', np.exp(bw_xi))
+        # print('______________________________')
+        # print('\nnaive gamma\n', np.exp(gamma))
+        # print('\nnaive gamma shape\n', np.exp(gamma).shape)
         # print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
         # print('\narray of where unlogged gamma has introgression chances above 1%\n', np.where(np.exp(gamma)[:, 1] > .001)[0])
-        print('\nBW gamma\n', np.exp(bw_gamma))
-        print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
-
+        # print('\nBW gamma\n', np.exp(bw_gamma))
+        # print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
 
     # # TESTING GAMMA VS INTROGRESSED SEQUENCES
     # iw1_start = 8534
@@ -358,12 +356,24 @@ def hmm(i_loci, i_ancestries):
     #       '\n', O[29_000:30_000])
 
     # TODO: EXPRESS THE RESULTS IN MATPLOTLIB
-    vis.visualizer(np.exp(gamma), np.exp(bw_gamma), tis)
+
+    vis.compare_3(np.exp(gamma), np.exp(bw_gamma), tiw)
+    # TODO: MEASURE THE PERFORMANCE OF AN HMM'S GAMMA VS THE REAL THING
+    print(eval.eval_accuracy(tiw, np.exp(bw_gamma), normalized, threshold))
+    print("False Postive Rate, False Negative Rate, True Positive Rate (Sensitivity), True Negative Rate (Specificity)")
+
 
     # # Commented code here used to export the gamma matrix for the purposes of displaying it
     # np.savetxt(
     #     '/Users/briankirz/Downloads/temp_gamma_matrix.csv.gz',
     #     gamma,
+
+    # list = [tp, tn, fp, fn]
+    # np.asarray(list)
+    # make sure this is a numpy array
+    # list = np.array[list]
+
+    #
     #     fmt='%1.3f',
     #     delimiter=',',
     # )
