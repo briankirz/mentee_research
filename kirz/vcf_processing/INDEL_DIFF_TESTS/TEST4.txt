@@ -1,0 +1,2 @@
+2	-i INFO/VT=SNP	97
+2	-v snps	98
