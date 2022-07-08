@@ -5,98 +5,66 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="827ef266-9bae-408c-bd0a-6915f44b8236" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/kirz/indel_diff_testing/INDEL_DIFF_TESTS/IINFO1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/indel_diff_testing/INDEL_DIFF_TESTS/IINFO2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/indel_diff_testing/INDEL_DIFF_TESTS/VSNP2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/indel_diff_testing/indel_pos.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr10.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr11.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr12.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr13.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr14.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr15.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr16.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr17.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr18.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr19.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr20.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr21.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr22.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr3.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr4.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr5.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr6.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr7.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr8.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr9.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr10.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr11.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr12.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr13.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr14.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr15.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr16.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr17.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr18.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr19.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr20.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr21.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr22.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr3.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr4.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr5.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr6.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr7.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr8.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr9.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO0.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/INDEL1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/INDEL_TEST0.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST0.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST3.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST4.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP0.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/README.MD" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr1.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr10.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr11.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr12.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr13.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr14.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr15.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr16.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr17.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr18.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr19.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr20.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr21.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr22.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr3.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr4.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr5.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr6.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr7.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr8.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/VSNP_INDELPOS/vsnps_chr9.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/bcf_biallelic.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/bcf_wrapper.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/compare_vcf.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/indel_diff.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kirz/vcf_processing/indel_pos.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/eval_accuracy.py" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/eval_accuracy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/hmm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/site_pattern_hmm/final_proj_HMM/visualizer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/kirz/test.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr10.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr11.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr12.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr13.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr14.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr15.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr16.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr17.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr18.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr19.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr20.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr21.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr22.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr3.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr4.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr5.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr6.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr7.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr8.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/IINFO_INDELPOS/iinfo_chr9.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr10.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr11.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr12.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr13.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr14.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr15.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr16.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr17.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr18.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr19.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr20.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr21.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr22.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr3.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr4.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr5.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr6.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr7.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr8.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_RESULTS/indel_diff_chr9.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO0.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/IINFO2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/INDEL1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/INDEL_TEST0.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST0.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST3.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/TEST4.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP0.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP1.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/INDEL_DIFF_TESTS/VSNP2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/vcf_processing/README.MD" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/vcf_processing/README.MD" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,6 +88,7 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -132,7 +101,7 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="3ed6a2be-bf61-43f9-92cc-33d4964b4c62" name="Changes" comment="" />
+      <changelist id="827ef266-9bae-408c-bd0a-6915f44b8236" name="Changes" comment="" />
       <created>1643840925416</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
@@ -151,5 +120,8 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
 </project>
