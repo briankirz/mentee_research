@@ -76,6 +76,7 @@ would replicate my work.
     (which are intended to be empty) are rerouted to their own directory, named
     `vsnp_indelpos` and `info_indelpos`, respectively.
 
+
 - **Command 6:**
     ```bash
     python indel_pos.py info_CHR.vcf.gz info_CHR.txt
