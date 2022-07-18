@@ -6,6 +6,7 @@ import support_code as supp
 # import visualizer as vis
 # import eval_accuracy as eval
 import warnings
+
 warnings.filterwarnings('ignore', message='divide by zero encountered in log')
 warnings.filterwarnings('ignore', message='invalid value encountered in double_scalars')
 try:
@@ -21,8 +22,6 @@ except AttributeError:
 
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
-
-
 
 
 # TODO: Should I reverse the given | syntax for "given" probabilities?
@@ -89,7 +88,6 @@ def calc_alpha(A, B, pi, Ob, N, T):
             # This code asks: what is the probability that each possible scenario (previous state being S or I) led to
             # our current state j? It then combines those probabilities and closes both timelines.
             for i in range(N):
-
                 # lp represents a sum of log probabilities:
                 # (forward variable at time t-1 for state i)
                 # + likelihood that last row's state i transitioned to this state j using the transition matrix A
@@ -108,31 +106,38 @@ def calc_alpha(A, B, pi, Ob, N, T):
             alpha[t][j] = lprob
     return alpha
 
+
 def calc_beta(A, B, Ob, N, T):
     beta = np.zeros((T + 1, N))
-    # beta[T - 1] = np.ones(N)
-    print("--------------------------------------")
-    print("--------------------------------------")
-    print(np.exp(beta))
-    print("--------------------------------------")
-    print("--------------------------------------")
     for t in range(T - 1, -1, -1):
         k = Ob[t]
-        for i in range(N):
+        for j in range(N):
             lprob = log_zero
-            for j in range(N):
-                lp = beta[t + 1][j] + A[i][j] + B[i][k]
+            for i in range(N):
+                lp = beta[t + 1][i] + A[j][i] + B[j][k]
+            #    print(np.exp(lprob))
+            #    print(np.exp(lp))
+            #    print(np.exp(lprob) + np.exp(lp))
+            #    print('--------------------')
                 lprob = logaddexp(lprob, lp)
-            beta[t][i] = lprob
+            # print('--------------------')
+            beta[t][j] = lprob
     return beta
+
 
 def calc_xi(A, B, Ob, N, T, alpha, beta):
     xi = np.zeros((T, N, N))
+    print("START")
+    print("---------------------")
     for t in range(T):
         k = Ob[t]
         lp_traverse = np.zeros((N, N))
         for i in range(N):
             for j in range(N):
+                # print("t = " + str(t))
+                # print("k = " + str(k))
+                # print("i = " + str(i))
+                # print("j = " + str(j))
                 # P(getting to this arc)
                 # P(making this transition)
                 # P(emitting this character)
@@ -143,14 +148,27 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
                         + B[i][k]
                         + beta[t + 1][j]
                 )
+                # print("alpha[" + str(t) + "][" + str(i) + "] = log(" + str(np.exp(alpha[t][i])) + ")")
+                # print("A[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(A[i][j])) + ")")
+                # print("B[" + str(i) + "][" + str(k) + "] = log(" + str(np.exp(B[i][k])) + ")")
+                # print("beta[" + str(t+1) + "][" + str(j) + "] = log(" + str(np.exp(beta[t+1][j])) + ")")
                 lp_traverse[i][j] = lp
+                # print("lp_traverse[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(lp)) + ")")
+                # print("---------------------")
         # Normalize the probability for this time step
         xi[t, :, :] = lp_traverse - supp.logsum(lp_traverse)
+        # print("---------------------")
+        # print("logsum of floor = " + str(np.exp(supp.logsum(lp_traverse))))
+        # print("---------------------")
+        # print("lp_traverse = " + str(np.exp(lp_traverse)))
+        # print("---------------------")
+        # print("final xi floor = " + str(np.exp(xi[t, :, :])))
+        # print("---------------------")
     return xi
+
 
 def calc_gamma(xi, N, T):
     gamma = np.zeros((T, N))
-    # TODO: DISCUSS: Sum of all transitions out of state i at time t, Size is T
     for t in range(T):
         for i in range(N):
             gamma[t][i] = supp.logsum(xi[t, i, :])
@@ -190,6 +208,7 @@ def update_B(Ob, N, M, T, xi):
         B[i, :] = ksum
     return B
 
+
 # iteratively update pi
 def update_pi(N, gamma):
     pi = np.zeros(N)
@@ -210,10 +229,13 @@ def hmm(i_loci, i_ancestries):
 
     # PRÜFER'S PARAMETERS
     # Ancestral switch rate
+    # TEST s = .25
     s = 0.0005
     # Prior probability for archaic ancestry at any locus
+    # TEST p = .25
     p = 0.01
     # Probability of archaic ancestry conditional on all SNPs in the window being of state "C"
+    # TEST u = .9
     u = 0.99
     # Probability cutoff for HMM's "guess" at a true state (HMM must be >=threshold% sure hidden state introgressed)
     threshold = .9
@@ -230,7 +252,6 @@ def hmm(i_loci, i_ancestries):
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
     optimization_limit = 10
 
-
     # PREPROCESSING
 
     # We begin by extracting the sequence:
@@ -241,7 +262,7 @@ def hmm(i_loci, i_ancestries):
 
     # extraction is a tuple made up of an Observation Sequence, which is a string of letters ("NNC..CN")...
     O = extraction[0]
-    O = "NNCCN" # Dummy Observed Sequence for testing/explanation
+    O = "NNCCN"  # Dummy Observed Sequence for testing/explanation
     # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents that I included to keep track of the true
     # introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
     # It has the structure (Window # -> Percentage of Introgression)
@@ -260,7 +281,6 @@ def hmm(i_loci, i_ancestries):
     observations = ['N', 'C']
     # Ob is the same as the observation sequence, but with 'N'-> 0 and 'C'-> 1 for quick referencing.
     Ob = [observations.index(label) for label in O]
-
 
     # SETTING UP THE HMM
 
@@ -293,7 +313,6 @@ def hmm(i_loci, i_ancestries):
     # Initializing a dictionary of gammas: this will allow the comparison of estimated likelihoods over rounds of B/W
     # It has the structure (current_optimization or algorithm step number -> tuple (gamma matrix, performance))
     All_gammas = {}
-
 
     # BAUM-WELCH OPTIMIZATION
 
@@ -337,23 +356,23 @@ def hmm(i_loci, i_ancestries):
 
     # check to see if there was any improvement
     if optimization_count > 0:
-        #print('\nadjusted A\n', np.exp(lp_A))
-        #print('\nadjusted B\n', np.exp(lp_B))
-        #print('\nadjusted pi\n', np.exp(lp_pi))
+        # print('\nadjusted A\n', np.exp(lp_A))
+        # print('\nadjusted B\n', np.exp(lp_B))
+        # print('\nadjusted pi\n', np.exp(lp_pi))
         print('______________________________')
         print('\nnaive alpha\n', np.exp(alpha))
-        #print('\nBW alpha\n', np.exp(bw_alpha))
+        # print('\nBW alpha\n', np.exp(bw_alpha))
         print('\nnaive beta\n', np.exp(beta))
-        #print('\nBW beta\n', np.exp(bw_beta))
+        # print('\nBW beta\n', np.exp(bw_beta))
         print('\nnaive xi\n', np.exp(xi))
-        #print('\nBW xi\n', np.exp(bw_xi))
-        #print('______________________________')
-        #print('\nnaive gamma\n', np.exp(gamma))
-        #print('\nnaive gamma shape\n', np.exp(gamma).shape)
-        #print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
-        #print('\narray of where unlogged gamma has introgression chances above 1%\n', np.where(np.exp(gamma)[:, 1] > .001)[0])
-        #print('\nBW gamma\n', np.exp(bw_gamma))
-        #print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
+        # print('\nBW xi\n', np.exp(bw_xi))
+        # print('______________________________')
+        print('\nnaive gamma\n', np.exp(gamma))
+        # print('\nnaive gamma shape\n', np.exp(gamma).shape)
+        # print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
+        # print('\narray of where unlogged gamma has introgression chances above 1%\n', np.where(np.exp(gamma)[:, 1] > .001)[0])
+        # print('\nBW gamma\n', np.exp(bw_gamma))
+        # print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
 
     # # TESTING GAMMA VS INTROGRESSED SEQUENCES
     # iw1_start = 8534
@@ -412,12 +431,11 @@ def hmm(i_loci, i_ancestries):
 
     # TODO: VISUALIZE DATA
     # vis.compare_3(np.exp(gamma), np.exp(bw_gamma), tiw)
-    #vis.display_performance(performances)
+    # vis.display_performance(performances)
 
     # TODO: MEASURE THE PERFORMANCE OF AN HMM'S GAMMA VS THE REAL THING
     # print(eval.eval_accuracy(tiw, np.exp(bw_gamma), normalized, threshold))
     # print("False Postive Rate, False Negative Rate, True Positive Rate (Sensitivity), True Negative Rate (Specificity)")
-
 
     # # Commented code here used to export the gamma matrix for the purposes of displaying it
     # np.savetxt(
