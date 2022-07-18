@@ -1,0 +1,10 @@
+#######
+###
+#
+#
+#
+######
+1	99	two	three	four	five	six	VT=INDEL
+1   100  two   three    four    five six VT=SNP
+1   101  two   three    four    five six VT=SNP
+1   102  two   three    four    five six VT=INDEL
