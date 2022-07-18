@@ -158,11 +158,7 @@ job submissions, with full filepaths and names included.
 ### Bash Command Structure:
 
 ```bash
-for CHR in {1..22};
-do sbatch -J ${CHR}_tgp_filter -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_tgp_filter-%A.out -e logs/${CHR}_tgp_filter-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -v snps -Oz -o vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_tgp_filter -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_tgp_filter-%A.out -e logs/${CHR}_tgp_filter-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -v snps -Oz -o vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
 ```
 I'll be using this format often in this guide to submit jobs from the command line.
 Here are some things to recognize about the command structure:
@@ -206,49 +202,29 @@ All chromosomes I used are found in this directory and have the naming conventio
 
 #### 1. Using `bcftools` with vsnp:
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_bcftools_vsnp -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_bcftools_vsnp-%A.out -e logs/${CHR}_bcftools_vsnp-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -v snps -Oz -o vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_bcftools_vsnp -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_bcftools_vsnp-%A.out -e logs/${CHR}_bcftools_vsnp-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -v snps -Oz -o vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
 ```
 
 #### 2. Using `bcftools` with info:
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_bcftools_info -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_bcftools_info-%A.out -e logs/${CHR}_bcftools_info-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -i 'INFO/VT="SNP"' -Oz -o info_tgp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_bcftools_info -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_bcftools_info-%A.out -e logs/${CHR}_bcftools_info-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="module load bcftools/1.13 gsl/2.5 gcc/8.3 perl/5.24.1; bcftools view -m2 -M2 -i 'INFO/VT="SNP"' -Oz -o info_tgp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"; done
 ```
 
 #### 3. Using `bialellic.py`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_my_biallelic -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_my_biallelic-%A.out -e logs/${CHR}_my_biallelic-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python biallelic.py /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_my_biallelic -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_my_biallelic-%A.out -e logs/${CHR}_my_biallelic-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python biallelic.py /users/bkirz/data/data/modern_genomes/1000genomes/ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${CHR}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
 ```
 
 ### II. Comparing Filtered Chromosomes
 
 #### 4. Comparing the results of `biallelic.py` and `bcftools -v snps`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_compare_my_vsnp -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_compare_my_vsnp-%A.out -e logs/${CHR}_compare_my_vsnp-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python compare_vcf.py vsnp_biallelic_snps_chr${CHR}.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_compare_my_vsnp -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_compare_my_vsnp-%A.out -e logs/${CHR}_compare_my_vsnp-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python compare_vcf.py vsnp_biallelic_snps_chr${CHR}.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
 ```
 
 #### 5. Comparing the results of `biallelic.py` and `bcftools -i VT="SNP"`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_compare_my_info -N 1 -n 4 -t 1:00:00 --mem=2G
--o logs/${CHR}_compare_my_info-%A.out -e logs/${CHR}_compare_my_info-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python compare_vcf.py info_biallelic_snps_chr${CHR}.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_compare_my_info -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_compare_my_info-%A.out -e logs/${CHR}_compare_my_info-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python compare_vcf.py info_biallelic_snps_chr${CHR}.vcf.gz my_biallelic_snps_chr${CHR}.vcf.gz"; done
 ```
 
 ### III. Extracting Indel Positions
@@ -256,35 +232,19 @@ Running `indel_pos.py` and putting the resulting .txt file of indel positions in
 
 #### 6. Finding indel positions in the filtered output of `bcftools -v snps`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_vsnp_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G 
--o logs/${CHR}_vsnp_indelpos_txt-%A.out -e logs/${CHR}_vsnp_indelpos_txt-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python indel_pos.py vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/vsnp_indelpos/vsnps_chr${CHR}.txt"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_vsnp_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_vsnp_indelpos_txt-%A.out -e logs/${CHR}_vsnp_indelpos_txt-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python indel_pos.py vsnp_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/vsnp_indelpos/vsnps_chr${CHR}.txt"; done
 ```
 #### 7. Finding indel positions in the filtered output of `bcftools -i VT="SNP"`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_info_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G 
--o logs/${CHR}_info_indelpos_txt-%A.out -e logs/${CHR}_info_indelpos_txt-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python indel_pos.py info_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/info_indelpos/info_chr${CHR}.txt"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_info_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_info_indelpos_txt-%A.out -e logs/${CHR}_info_indelpos_txt-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python indel_pos.py info_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/info_indelpos/info_chr${CHR}.txt"; done
 ```
 #### 8. Finding indel positions in the filtered output of `biallelic.py`
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_my_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G 
--o logs/${CHR}_my_indelpos_txt-%A.out -e logs/${CHR}_my_indelpos_txt-%A.err
---mail-type=ALL --mail-user=brian_kirz@brown.edu
---wrap="python indel_pos.py my_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/my_indelpos/info_chr${CHR}.txt"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_my_indelpos_txt -N 1 -n 4 -t 1:00:00 --mem=2G -o logs/${CHR}_my_indelpos_txt-%A.out -e logs/${CHR}_my_indelpos_txt-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python indel_pos.py my_biallelic_snps_chr${CHR}.vcf.gz /users/bkirz/scratch/kirz_tutorials/vcf_processing/my_indelpos/info_chr${CHR}.txt"; done
 ```
 
 ### IV. Comparing Indel Positions
 #### 9. Running `indel_diff.py` on the `indel_pos.py` outputs of both `bcftools` methods
 ```bash
-for CHR in {1..22}; do
-sbatch -J ${CHR}_indel_diff -N 1 -n 4 -t 1:00:00 --mem=2G 
--o logs/${CHR}_indel_diff-%A.out -e logs/${CHR}_indel_diff-%A.err 
---mail-type=ALL --mail-user=brian_kirz@brown.edu 
---wrap="python indel_diff.py vsnp_indelpos/vsnps_chr${CHR}.txt info_indelpos/info_chr${CHR}.txt /users/bkirz/scratch/kirz_tutorials/vcf_processing/diff_results/indel_diff_chr${CHR}.txt"; done
+for CHR in {1..22}; do sbatch -J ${CHR}_indel_diff -N 1 -n 4 -t 1:00:00 --mem=2G  -o logs/${CHR}_indel_diff-%A.out -e logs/${CHR}_indel_diff-%A.err --mail-type=ALL --mail-user=brian_kirz@brown.edu --wrap="python indel_diff.py vsnp_indelpos/vsnps_chr${CHR}.txt info_indelpos/info_chr${CHR}.txt /users/bkirz/scratch/kirz_tutorials/vcf_processing/diff_results/indel_diff_chr${CHR}.txt"; done
 ```
