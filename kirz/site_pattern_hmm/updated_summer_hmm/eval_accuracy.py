@@ -15,11 +15,7 @@ import numpy as np
 #                    probabilities accordingly, then evaluating them in relation to the threshold.
 #       threshold = float representing level of certainty HMM has of true state being introgressed.
 #                   at or above threshold in the gamma matrix is evaluated as an "introgression guess" of the HMM
-<<<<<<< HEAD
-# OUTPUT: performance = an float list [false_pos_r, miss_rate, sensitivity, specificity]
-=======
 # OUTPUT: performance = an numpy array of floats [false_pos_r, miss_rate, sensitivity, specificity]
->>>>>>> Processing-VCF-files-checklist
 #       false_pos_r: "false positive" rate or (# false positives / (# false positives + # true negatives))
 #                    probability true negative will test positive given the model (false alarm)
 #       miss_rate:   "false negative" rate or (# false negatives / (# false negatives + # true positives))
@@ -92,9 +88,5 @@ def eval_accuracy(true_windows, tested_HMM, normalized, threshold):
     else:
         print("ERROR IN EVAL: C column of gamma and true introgressed window array have different number of windows")
 
-<<<<<<< HEAD
-    performance = [false_pos_r, miss_rate, sensitivity, specificity]
-=======
     performance = np.array([false_pos_r, miss_rate, sensitivity, specificity])
->>>>>>> Processing-VCF-files-checklist
     return performance
