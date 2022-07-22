@@ -227,8 +227,7 @@ def hmm(i_loci, i_ancestries, o_results):
     loci = i_loci
     ancestries = i_ancestries
 
-
-    # PRÜFER'S PARAMETERS
+    # PRUFER'S PARAMETERS
     # Ancestral switch rate
     # TEST s = .25
     s = 0.0005
@@ -249,11 +248,11 @@ def hmm(i_loci, i_ancestries, o_results):
     # Intialize the start time.
     start = time.time()
 
-    # KIRZ's PARAMETERS (not specified by Prüfer)
-    # Should results be normalized based on relative probability? Prüfer leaves this unclear
+    # KIRZ's PARAMETERS (not specified by Prufer)
+    # Should results be normalized based on relative probability? Prufer leaves this unclear
     normalized = True
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
-    optimization_limit = 10
+    optimization_limit = 5
 
     # PREPROCESSING
 
@@ -449,12 +448,12 @@ def hmm(i_loci, i_ancestries, o_results):
 
     # # Commented code here used to export the gamma matrix for the purposes of displaying it
     # TODO: not showing up for some reason
-    np.savetxt(
-        '/Users/briankirz/Downloads/temp_gamma_matrix.csv.gz',
-        np.exp(gamma),
-        fmt='%1.3f',
-        delimiter=',',
-    )
+    # np.savetxt(
+    #     '/Users/briankirz/Downloads/temp_gamma_matrix.csv.gz',
+    #     np.exp(gamma),
+    #     fmt='%1.3f',
+    #     delimiter=',',
+    # )
 
     # list = [tp, tn, fp, fn]
     # np.asarray(list)
@@ -486,19 +485,42 @@ def hmm(i_loci, i_ancestries, o_results):
         out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
 
         out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
-        out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
+        # Commented out because I think it's unnecessary
+        # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
 
         # TODO: Runtime analysis
-        out.write('Runtime for generating observation sequence: {0} seconds'.format((stage1 - start)) + '\n')
-        out.write('Runtime for running Naive HMM: {0} minutes'.format((stage2 - start) / float(60)) + '\n')
-        out.write('Runtime for ' + str(optimization_count) + ' steps of Baum-Welch: {0} minutes'.format((stage3 - start)
-                                                                                                   / float(60)) + '\n')
 
-        # TODO: Windows with >90%  chance of being introgressed according to HMM
+        # makes manipulating format easier
+        stage1_time = "{:.2f}".format(stage1 - start)
+        out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
 
+        stage2 = stage2 - start
+        stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
+        stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
+        stage2_time = stage2_minutes + stage2_seconds
+        out.write('\nRuntime for running Naive HMM: ' + stage2_time)
 
+        stage3 = stage3 - start
+        stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
+        stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
+        stage3_time = stage3_minutes + stage3_seconds
+        out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
 
         # TODO: True Introgressed Windows
+
+        # TODO: Windows with >90%  chance of being introgressed according to HMMs %5
+
+        # Naive HMM windows
+
+        # Loop that prints each 5th HMM after 5
+
+        # TODO: RESULTS
+
+        # Naive HMM results
+
+        # HMM % 5 results
+
+        # Best HMM results
 
         # False Positive Rate:
         # True Positive Rate (sensitivity):
@@ -508,4 +530,4 @@ def hmm(i_loci, i_ancestries, o_results):
     return np.exp(gamma)
 
 
-hmm(sys.argv[1], sys.argv[2])
+hmm(sys.argv[1], sys.argv[2], sys.argv[3])

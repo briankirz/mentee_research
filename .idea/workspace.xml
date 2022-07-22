@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="8707473a-56b8-4750-b4b4-87ecefdf3daf" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/site_pattern_hmm/hmm_code/extract_obs.py" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/site_pattern_hmm/hmm_code/extract_obs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kirz/site_pattern_hmm/hmm_code/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/kirz/site_pattern_hmm/hmm_code/hmm.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +23,14 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
   </component>
   <component name="ProjectId" id="24ZbBcukurbjZBguj6lj1lvvENQ" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />

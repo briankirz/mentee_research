@@ -63,7 +63,7 @@ def extract_O(variable_positions, polarized_genotype_matrix):
     # Load the genotype matrix.
     pol_geno_mat = np.loadtxt(pol_geno_mat, dtype=int, delimiter=',')
     # Load the introgressed region dataframe.
-    true_intro_pos = pd.read_csv('../cs282_sim_data/rep_id_1_intro_pos.csv.gz', float_precision='round_trip')
+    # true_intro_pos = pd.read_csv('../cs282_sim_data/rep_id_1_intro_pos.csv.gz', float_precision='round_trip')
 
 
 
@@ -141,4 +141,4 @@ def extract_O(variable_positions, polarized_genotype_matrix):
     return O, Bin_dict
 
 
-extract_O(sys.argv[1], sys.argv[2])
+# extract_O(sys.argv[1], sys.argv[2])
