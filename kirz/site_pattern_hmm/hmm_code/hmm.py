@@ -363,36 +363,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # Stage 3: Checkpoint that marks time after B-W is complete
     stage3 = time.time()
 
-    # check to see if there was any improvement
-    # if optimization_count > 0:
-        # print('\nadjusted A\n', np.exp(lp_A))
-        # print('\nadjusted B\n', np.exp(lp_B))
-        # print('\nadjusted pi\n', np.exp(lp_pi))
-        # print('______________________________')
-        # print('\nnaive alpha\n', np.exp(alpha))
-        # print('\nBW alpha\n', np.exp(bw_alpha))
-        # print('\nnaive beta\n', np.exp(beta))
-        # print('\nBW beta\n', np.exp(bw_beta))
-        # print('\nnaive xi\n', np.exp(xi))
-        # print('\nBW xi\n', np.exp(bw_xi))
-        # print('______________________________')
-        # print('\nnaive gamma\n', np.exp(gamma))
-        # print('\nnaive gamma shape\n', np.exp(gamma).shape)
-        # print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
-        # print('\narray of where unlogged gamma has introgression chances above 1%\n',
-        #       np.where(np.exp(gamma)[:, 1] > .001)[0])
-        # print('\narray of where unlogged gamma has introgression chances above 90%\n',
-        #       np.where(np.exp(gamma)[:, 1] > .9)[0])
-        # print('______________________________')
-        # print('\nBW gamma\n', np.exp(bw_gamma))
-        # print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
-        # print('\narray of where unlogged bw_gamma has nonzero values\n', np.where(np.exp(bw_gamma)[:, 0] > 0)[0])
-        # print('\narray of where unlogged bw_gamma has introgression chances above 1%\n',
-        #       np.where(np.exp(bw_gamma)[:, 1] > .001)[0])
-        # print('\narray of where unlogged bw_gamma has introgression chances above 90%\n',
-        #       np.where(np.exp(bw_gamma)[:, 1] > .9)[0])
-        # print('______________________________')
-
     # EXPRESS THE RESULTS IN MATPLOTLIB
 
     # Makes sure All_gammas is runnign properly
@@ -447,11 +417,10 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     num_windows = len(Windows)
 
 
+    # adding extra column at the end to show window labels
+    results = np.zeros((num_windows, optimization_limit + 4))
 
-    results = np.zeros((num_windows, optimization_limit + 3))
-
-    print(results.shape)
-
+    # recording results
     for key in Windows:
         # initializing starts
         results[key-1][0] = Windows[key][0]
@@ -459,55 +428,54 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
         results[key-1][1] = Windows[key][1]
         # initializing true introgression percentages
         results[key-1][2] = Win_intro_percent[key]
+        # indicating window labels (1 = C, 0 = N)
+        results[key-1][3] = Ob[key-1]
     # iterating through all baum-welch gamma matrices
     for g in range(0, optimization_limit):
         # for each particular window position in gamma, what is the percentage change of introgression?
         for w in range(0, num_windows):
-            results[w][g + 3] = np.exp(All_gammas[g][w][1])
+            results[w][g + 4] = np.exp(All_gammas[g][w][1])
 
-    print(results.shape)
 
     np.savetxt('/Users/briankirz/Downloads/testing_results.csv.gz',
                results,
                fmt='%1.3f',
-               delimiter=',\t',
+               delimiter=',',
                newline='\n',
                )
 
-
-
     # TODO: Writing to output textfile
 
-    results_txt = o_results
-    with open(results_txt, 'w') as out:
+#     results_txt = o_results
+#     with open(results_txt, 'w') as out:
 
-        # TODO: Complex regex for deriving the rep id number from the filepath loci
-        rep_id_number = 1
-        out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
+#         # TODO: Complex regex for deriving the rep id number from the filepath loci
+#         rep_id_number = 1
+#         out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
 
-        out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
-        # Commented out because I think it's unnecessary
-        # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
+#         out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
+#         # Commented out because I think it's unnecessary
+#         # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
 
-        # TODO: Runtime analysis
+#         # TODO: Runtime analysis
 
-        # makes manipulating format easier
-        stage1_time = "{:.2f}".format(stage1 - start)
-        out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
+#         # makes manipulating format easier
+#         stage1_time = "{:.2f}".format(stage1 - start)
+#         out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
 
-        stage2 = stage2 - start
-        stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
-        stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
-        stage2_time = stage2_minutes + stage2_seconds
-        out.write('\nRuntime for running Naive HMM: ' + stage2_time)
+#         stage2 = stage2 - start
+#         stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
+#         stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
+#         stage2_time = stage2_minutes + stage2_seconds
+#         out.write('\nRuntime for running Naive HMM: ' + stage2_time)
 
-        stage3 = stage3 - start
-        stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
-        stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
-        stage3_time = stage3_minutes + stage3_seconds
-        out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
+#         stage3 = stage3 - start
+#         stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
+#         stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
+#         stage3_time = stage3_minutes + stage3_seconds
+#         out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
 
-        # TODO: True Introgressed Windows
+#         # TODO: True Introgressed Windows
         # out.write('\nTrue Introgressed Windows: ' + )
 
         # TODO: Windows with >90%  chance of being introgressed according to HMMs %5

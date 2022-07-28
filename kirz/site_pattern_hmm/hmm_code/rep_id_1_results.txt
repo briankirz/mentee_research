@@ -2,6 +2,6 @@ Rep ID #1 results:
 
 There are 250 consistent sites in the observed sequence
 
-Runtime for generating observation sequence: 4.04 seconds
-Runtime for running Naive HMM: 0 minutes 7.38 seconds
-Runtime for 20 steps of Baum-Welch: 1 minutes 44.02 seconds
+Runtime for generating observation sequence: 5.73 seconds
+Runtime for running Naive HMM: 0 minutes 8.78 seconds
+Runtime for 20 steps of Baum-Welch: 1 minutes 42.59 seconds
