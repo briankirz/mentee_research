@@ -25,10 +25,14 @@ import numpy as np
 #       specificity: "true negative" rate or (# true negatives / (# true negatives + # false positives))
 #                    probability true negative will test negative given the model (window edges treated as negative)
 def eval_accuracy(true_windows, tested_HMM, normalized, threshold):
-    tiw = true_windows  # matrix of windows containing introgressed sites (1. = 100% coverage)
-    gamma = tested_HMM[:, 1]  # takes the second column of gamma, which has the Cs!
-    # normalized = False  # set to True by default, comment this out for flexible use
-    # threshold = .9  # set to .9 (90%) by default, comment out for flexible use
+    # matrix of windows containing introgressed sites (1. = 100% coverage)
+    tiw = true_windows
+    # takes the second column of gamma, which has the Cs!
+    gamma = tested_HMM[:, 1]
+    # set to True by default, comment this out for flexible use
+    # normalized = False
+    # set to .9 (90%) by default, comment out for flexible use
+    # threshold = .9
     # values preset to -1 to easily show errors
     false_pos_r = -1
     miss_rate = -1

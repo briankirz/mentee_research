@@ -4,8 +4,8 @@ import extract_obs
 import support_code as supp
 import time
 # Commented out when we don't need to use performance visualization
-# import visualizer as vis
-# import eval_accuracy as eval
+import visualizer as vis
+import eval_accuracy as eval
 import warnings
 
 warnings.filterwarnings('ignore', message='divide by zero encountered in log')
@@ -223,9 +223,10 @@ def update_pi(N, gamma):
 # Output:
 #   o_results: name of text file
 #   TODO: Explain
-def hmm(i_loci, i_ancestries, o_results):
+def hmm(i_loci, i_ancestries, i_true_states, o_results):
     loci = i_loci
     ancestries = i_ancestries
+    true_states = i_true_states
 
     # PRUFER'S PARAMETERS
     # Ancestral switch rate
@@ -250,33 +251,31 @@ def hmm(i_loci, i_ancestries, o_results):
 
     # KIRZ's PARAMETERS (not specified by Prufer)
     # Should results be normalized based on relative probability? Prufer leaves this unclear
-    normalized = True
+    normalized = False
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
-    optimization_limit = 5
+    optimization_limit = 20
+    # Remember that since we count the Naive HMM as BW# = 0, this will result in 4 optimization rounds.
+    # If you want to run 5 rounds, put 6
 
     # PREPROCESSING
-
     # We begin by extracting the sequence:
-    # NOTE: The function extract_O typically takes in (variable positions, polarized genotype matrix)
-    # Here, for testing's sake, the function is hardcoded with dummy arguments 1 and 2.
-    extraction = extract_obs.extract_O(loci, ancestries)
-
+    extraction = extract_obs.extract_O(loci, ancestries, true_states)
     # extraction is a tuple made up of an Observation Sequence, which is a string of letters ("NNC..CN")...
     O = extraction[0]
     # O = "NNCCN"  # Dummy Observed Sequence for testing/explanation
+    # T is equal to the length of the sequence
+    T = len(O)
     # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents that I included to keep track of the true
     # introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
     # It has the structure (Window # -> Percentage of Introgression)
     Win_intro_percent = extraction[1]
-
-    # T is equalt to the length of the sequence
-    T = len(O)
-
     # creates an list in which to store the window numbers of loci that have true introgressed hidden states
     true_intro_windows = []
     for key in Win_intro_percent: true_intro_windows.append(Win_intro_percent[key])
     # transposes the true introgression site list and stores it in a numpy array for the purposes of visual display
     tiw = np.array([true_intro_windows]).T
+    # easy way to keep track of window stops and starts
+    Windows = extraction[2]
 
     # index letter observations for future use
     observations = ['N', 'C']
@@ -303,7 +302,7 @@ def hmm(i_loci, i_ancestries, o_results):
     pi = np.array((1 - p, p))
     lp_pi = np.log(pi)
 
-    # TODO: Initialize log-likelihood trackers and print initial inference
+    # Initialize log-likelihood trackers and print initial inference
     logP_old = log_zero
     alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T)
     logP_new = supp.logsum(alpha[T, :])
@@ -323,6 +322,7 @@ def hmm(i_loci, i_ancestries, o_results):
     All_gammas = {}
 
     optimization_count = 0
+
     # Iterate until convergence is reached between results, performance decreases, or the hard cap is met
     while logP_new - logP_old > convergence_threshold and optimization_count < optimization_limit:
 
@@ -337,6 +337,7 @@ def hmm(i_loci, i_ancestries, o_results):
             print("Optimization count " + str(optimization_count))
             print("Improvement of " + str(logP_new - logP_old) + " from last model")
             All_gammas[optimization_count] = bw_gamma
+        # we set it to just run once
         elif optimization_count == 0:
             All_gammas[optimization_count] = gamma
 
@@ -359,78 +360,55 @@ def hmm(i_loci, i_ancestries, o_results):
         if supp.logsum(bw_alpha[T, :]) > logP_old:
             lp_A, lp_B, lp_pi = new_A, new_B, new_pi
             logP_new = supp.logsum(bw_alpha[T, :])
-
     # Stage 3: Checkpoint that marks time after B-W is complete
     stage3 = time.time()
 
     # check to see if there was any improvement
-    if optimization_count > 0:
+    # if optimization_count > 0:
         # print('\nadjusted A\n', np.exp(lp_A))
         # print('\nadjusted B\n', np.exp(lp_B))
         # print('\nadjusted pi\n', np.exp(lp_pi))
-        print('______________________________')
-        print('\nnaive alpha\n', np.exp(alpha))
+        # print('______________________________')
+        # print('\nnaive alpha\n', np.exp(alpha))
         # print('\nBW alpha\n', np.exp(bw_alpha))
-        print('\nnaive beta\n', np.exp(beta))
+        # print('\nnaive beta\n', np.exp(beta))
         # print('\nBW beta\n', np.exp(bw_beta))
-        print('\nnaive xi\n', np.exp(xi))
+        # print('\nnaive xi\n', np.exp(xi))
         # print('\nBW xi\n', np.exp(bw_xi))
         # print('______________________________')
-        print('\nnaive gamma\n', np.exp(gamma))
+        # print('\nnaive gamma\n', np.exp(gamma))
         # print('\nnaive gamma shape\n', np.exp(gamma).shape)
         # print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
-        # print('\narray of where unlogged gamma has introgression chances above 1%\n', np.where(np.exp(gamma)[:, 1] > .001)[0])
+        # print('\narray of where unlogged gamma has introgression chances above 1%\n',
+        #       np.where(np.exp(gamma)[:, 1] > .001)[0])
+        # print('\narray of where unlogged gamma has introgression chances above 90%\n',
+        #       np.where(np.exp(gamma)[:, 1] > .9)[0])
+        # print('______________________________')
         # print('\nBW gamma\n', np.exp(bw_gamma))
         # print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
+        # print('\narray of where unlogged bw_gamma has nonzero values\n', np.where(np.exp(bw_gamma)[:, 0] > 0)[0])
+        # print('\narray of where unlogged bw_gamma has introgression chances above 1%\n',
+        #       np.where(np.exp(bw_gamma)[:, 1] > .001)[0])
+        # print('\narray of where unlogged bw_gamma has introgression chances above 90%\n',
+        #       np.where(np.exp(bw_gamma)[:, 1] > .9)[0])
+        # print('______________________________')
 
-    # # TESTING GAMMA VS INTROGRESSED SEQUENCES
-    # iw1_start = 8534
-    # iw1_stop = 8614
-    # print('\nObserved sequence around introgressed segment 1, covering 500bp windows '
-    #       + str(iw1_start) + " to " + str(iw1_stop) + '\n', O[iw1_start:iw1_stop])
-    # print('\ngamma at introgressed segment 1:\n', np.exp(gamma[iw1_start:iw1_stop]))
-    # iw2_start = 13696
-    # iw2_stop = 13802
-    # print('\nObserved sequence around introgressed segment 2, covering 500bp windows '
-    #       + str(iw2_start) + " to " + str(iw2_stop) + '\n', O[iw2_start:iw2_stop])
-    # print('\ngamma at introgressed segment 2:\n', np.exp(gamma[iw2_start:iw2_stop]))
-    # iw3_start = 23152
-    # iw3_stop = 23170
-    # print('\nObserved sequence around introgressed segment 3, covering 500bp windows '
-    #       + str(iw3_start) + " to " + str(iw3_stop) + '\n', O[iw3_start:iw3_stop])
-    # print('\ngamma at introgressed segment 3:\n', np.exp(gamma[iw3_start:iw3_stop]))
-    # iw4_start = 25678
-    # iw4_stop = 25842
-    # print('\nObserved sequence around introgressed segment 4, covering 500bp windows '
-    #       + str(iw4_start) + " to " + str(iw4_stop) + '\n', O[iw4_start:iw4_stop])
-    # print('\ngamma at introgressed segment 4:\n', np.exp(gamma[iw4_start:iw4_stop]))
-    # iw5_start = 34097
-    # iw5_stop = 34249
-    # print('\nObserved sequence around introgressed segment 5, covering 500bp windows '
-    #       + str(iw5_start) + " to " + str(iw5_stop) + '\n', O[iw5_start:iw5_stop])
-    # print('\ngamma at introgressed segment 5:\n', np.exp(gamma[iw5_start:iw5_stop]))
-    # iw6_start = 35230
-    # iw6_stop = 35276
-    # print('\nObserved sequence around introgressed segment 6, covering 500bp windows '
-    #       + str(iw6_start) + " to " + str(iw6_stop) + '\n', O[iw6_start:iw6_stop])
-    # print('\ngamma at introgressed segment 6:\n', np.exp(gamma[iw6_start:iw6_stop]))
+    # EXPRESS THE RESULTS IN MATPLOTLIB
 
-    # Tried to see what was going on at 29k-30k
-    # print('\nObserved sequence around incorrect estimation 29k-30k, covering 500bp windows ' +
-    #       '\n', O[29_000:30_000])
-
-    # TODO: EXPRESS THE RESULTS IN MATPLOTLIB
-
+    # Makes sure All_gammas is runnign properly
     # print(len(All_gammas.keys()))
     # print(All_gammas[0])
     # print(All_gammas[0].shape)
     # print(All_gammas[0] == gamma)
-    # print(All_gammas[optimization_limit-1] == bw_gamma)
+    # print(All_gammas[optimization_limit - 1] == bw_gamma)
 
     # TODO: PERFORMANCES
-    # performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
-    # for key in All_gammas:
-    #     performances[key] = eval.eval_accuracy(tiw, np.exp(All_gammas[key]), normalized, threshold)
+    # Creates Y rows X 4 columns array to record performances, for each Yth step in Baum-Welch
+    performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
+    # For each gamma array in all_gammas (there are a number equal to the runs of baum-welch)
+    for key in All_gammas:
+        # initialize each row of performances to its respective version of the gamma array
+        performances[key] = eval.eval_accuracy(tiw, np.exp(All_gammas[key]), normalized, threshold)
 
     # print(performances)
     # print(performances.shape)
@@ -443,8 +421,10 @@ def hmm(i_loci, i_ancestries, o_results):
     # vis.display_performance(performances)
 
     # TODO: MEASURE THE PERFORMANCE OF AN HMM'S GAMMA VS THE REAL THING
+    # TODO: print(tiw)
     # print(eval.eval_accuracy(tiw, np.exp(bw_gamma), normalized, threshold))
-    # print("False Postive Rate, False Negative Rate, True Positive Rate (Sensitivity), True Negative Rate (Specificity)")
+    # print("False Positive Rate, False Negative Rate,
+    # True Positive Rate (Sensitivity), True Negative Rate (Specificity)")
 
     # # Commented code here used to export the gamma matrix for the purposes of displaying it
     # TODO: not showing up for some reason
@@ -460,22 +440,43 @@ def hmm(i_loci, i_ancestries, o_results):
     # make sure this is a numpy array
     # list = np.array[list]
 
-    # TESTING ROUNDING ERRORS
-    # print(np.exp(alpha[0][0]))
-    # print(np.exp(alpha[1][0]))
-    # print(np.exp(alpha[2][0]))
-    # print(np.exp(alpha[3][0]))
-    # print(np.exp(alpha[4][0]))
-    # print(np.exp(alpha[5][0]))
-    # print("------------------------")
-    # print(np.exp(alpha[1][1]))
-    # print(np.exp(alpha[1][1]))
-    # print(np.exp(alpha[2][1]))
-    # print(np.exp(alpha[3][1]))
-    # print(np.exp(alpha[4][1]))
-    # print(np.exp(alpha[5][1]))
+    # TODO: Create Results Numpyarray
+    # Results is a numpy array that will be filled and exported with all the results of a single rep id
+    # It has columns containing the following information:
+    # Window Start position | Window Stop position | True Introgression % | BW{X} gamma | BW{X+1} gamma | BW{X+2} gamma
+    num_windows = len(Windows)
 
-    # Writing to output textfile
+
+
+    results = np.zeros((num_windows, optimization_limit + 3))
+
+    print(results.shape)
+
+    for key in Windows:
+        # initializing starts
+        results[key-1][0] = Windows[key][0]
+        # initializing stops
+        results[key-1][1] = Windows[key][1]
+        # initializing true introgression percentages
+        results[key-1][2] = Win_intro_percent[key]
+    # iterating through all baum-welch gamma matrices
+    for g in range(0, optimization_limit):
+        # for each particular window position in gamma, what is the percentage change of introgression?
+        for w in range(0, num_windows):
+            results[w][g + 3] = np.exp(All_gammas[g][w][1])
+
+    print(results.shape)
+
+    np.savetxt('/Users/briankirz/Downloads/testing_results.csv.gz',
+               results,
+               fmt='%1.3f',
+               delimiter=',\t',
+               newline='\n',
+               )
+
+
+
+    # TODO: Writing to output textfile
 
     results_txt = o_results
     with open(results_txt, 'w') as out:
@@ -507,6 +508,7 @@ def hmm(i_loci, i_ancestries, o_results):
         out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
 
         # TODO: True Introgressed Windows
+        # out.write('\nTrue Introgressed Windows: ' + )
 
         # TODO: Windows with >90%  chance of being introgressed according to HMMs %5
 
@@ -530,4 +532,8 @@ def hmm(i_loci, i_ancestries, o_results):
     return np.exp(gamma)
 
 
-hmm(sys.argv[1], sys.argv[2], sys.argv[3])
+# test command
+# sh hmm.sh var_pos pol_geno_mat intro_pos results.txt
+# sh hmm.sh ../cs282_sim_data/rep_id_1_var_pos.csv.gz ../cs282_sim_data/rep_id_1_geno_mat.csv.gz ../cs282_sim_data/rep_id_1_intro_pos.csv.gz rep_id_1_results.txt
+
+hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
