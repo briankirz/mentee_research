@@ -9,7 +9,7 @@ import time
 def genotype_matrix_windows(
         variant_positions,
         polarized_genotype_matrix,
-        window_size=50000,
+        window_size=500,
         sequence_length=20000000,
 ):
     # Intialize a dictionary with the start and stop position for each window.
@@ -34,7 +34,7 @@ def genotype_matrix_windows(
     return windows
 
 
-def calc_window_intro_percent(variant_Windows, true_introgression_positions):
+def calc_window_intro_percent(Binned_windows, true_introgression_positions):
     # Creates a dictionary of windows that correspond to the % they are covered by introgressed segments
     # INPUT:
     # Dictionary variant_Windows = {} where 1 -> [0, 500), 2 -> [500, 100), ..., 40_000 -> [19_999_500, 20_000_000)
@@ -47,7 +47,7 @@ def calc_window_intro_percent(variant_Windows, true_introgression_positions):
     # the true introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
     # It has the structure (Window # -> Percentage of Introgression as a float between 0 and 1
 
-    Windows = variant_Windows
+    Windows = Binned_windows
     true_intro_pos = true_introgression_positions
     # Initializing dictionary of Window Introgression Percentages
     Win_intro_percent = {}
@@ -193,6 +193,7 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # Windows is of the format key -> value
     # Window # (1-400) -> [Start position, stop position, (optional var_pos positions)]
     Windows = genotype_matrix_windows(var_pos, pol_geno_mat, window_size=500)
+    Wip = calc_window_intro_percent(Windows, true_intro_pos)
 
     ##############################
     # EXTRACTING OBSERVED SEQUENCE
@@ -239,10 +240,6 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # print('the consistent observations occur in window(s) {0}'.format(np.where(obs_seq_array == 'C')))
     # print('the run time for generating one observed sequence is {0} minutes'.format((end - start) / float(60)))
 
-    # test command
-    # python3 extract_obs.py ../sim_example/rep_id_1_var_pos.csv.gz ../sim_example/rep_id_1_geno_mat.csv.gz ../sim_example/rep_id_1_intro_pos.csv.gz
-
-    Wip = calc_window_intro_percent(Windows, true_intro_pos)
     return obs_seq_array, Wip, Windows
 
 

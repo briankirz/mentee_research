@@ -6,20 +6,6 @@ import time
 # Commented out when we don't need to use performance visualization
 import visualizer as vis
 import eval_accuracy as eval
-import warnings
-
-warnings.filterwarnings('ignore', message='divide by zero encountered in log')
-warnings.filterwarnings('ignore', message='invalid value encountered in double_scalars')
-try:
-    logaddexp = np.logaddexp
-except AttributeError:
-    def logaddexp(logx, logy):
-        if logy - logx > 100:
-            return logy
-        elif logx - logy > 100:
-            return logx
-        minxy = min(logx, logy)
-        return minxy + np.log(np.exp(logx - minxy) + np.exp(logy - minxy))
 
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
