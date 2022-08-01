@@ -2,49 +2,24 @@ import sys
 import numpy as np
 
 
-# eval_accuracy measures the performance of an HMM against (Type 1) true introgressed sites
-# INPUT:
-#       true_windows = numpy array of windows (tiw) containing introgressed sites measured by percentage coverage.
-#                      For purposes of clarity will ignore incomplete window edges as they result in Ns
-#                      Treated within this method to only account for 100% introgressed windows
-#       tested_HMM = numpy gamma matrix returned from HMM creation. Represents likelihood of introgression at position
-#                    Should be pre-exponentiated (float probabilities not logs). Input is full numpy array
-#       normalized = Boolean true/false determining behavior of algorithm. Default True
-#                    False will HMM "guesses" as presented: are they over the threshold or not?
-#                    True will adjust HMM "guesses", treating the highest-scoring window as 1 and normalizing other
-#                    probabilities accordingly, then evaluating them in relation to the threshold.
-#       threshold = float representing level of certainty HMM has of true state being introgressed.
-#                   at or above threshold in the gamma matrix is evaluated as an "introgression guess" of the HMM
-# OUTPUT: performance = an numpy array of floats [false_pos_r, miss_rate, sensitivity, specificity]
-#       false_pos_r: "false positive" rate or (# false positives / (# false positives + # true negatives))
-#                    probability true negative will test positive given the model (false alarm)
-#       miss_rate:   "false negative" rate or (# false negatives / (# false negatives + # true positives))
-#                    probability true positive will test negative given the model (expected often, use example)
-#       sensitivity: "true positive" rate or (# true positives / (# true positives + # false negatives))
-#                    probability true positive will test positive given the model
-#       specificity: "true negative" rate or (# true negatives / (# true negatives + # false positives))
-#                    probability true negative will test negative given the model (window edges treated as negative)
-def eval_accuracy(true_windows, tested_HMM, normalized, threshold):
+def eval_accuracy(true_windows, tested_HMM, normalized=True, threshold=.9):
     # matrix of windows containing introgressed sites (1. = 100% coverage)
     tiw = true_windows
-    # takes the second column of gamma, which has the Cs!
+    # takes the second column of gamma, which measures the likelihood of Neanderthal ancestry
     gamma = tested_HMM[:, 1]
-    # set to True by default, comment this out for flexible use
-    # normalized = False
-    # set to .9 (90%) by default, comment out for flexible use
-    # threshold = .9
-    # values preset to -1 to easily show errors
+
+    # performance values preset to -1 to easily show errors
     false_pos_r = -1
     miss_rate = -1
     sensitivity = -1
     specificity = -1
 
 
-    # IF we need to normalize, change values of gamma such that the highest-scoring site is set to 100%
+    # If we need to normalize, change values of gamma such that the highest-scoring site is set to 100%
     if normalized:
-        # 1. Find the value of the highest-scoring site in gamma
+        # Find the value of the highest-scoring site in gamma
         max_prob = np.amax(gamma)
-        # 2. Multiply every probability in gamma (including the highest-scoring site) by 1/max_prob
+        # Multiply every probability in gamma (including the highest-scoring site) by 1/max_prob
         gamma = gamma * (1 / max_prob)
 
     # Compare gamma and tiw to see if they have the same number of elements (windows)
@@ -57,22 +32,22 @@ def eval_accuracy(true_windows, tested_HMM, normalized, threshold):
 
         # loop through gamma and record the number of true/false positives/negatives
         for w in range(len(tiw)):
-            # Underlying window is 100% introgressed
-            if tiw[w] == 1.:
+            # Underlying window is partially or completely introgressed
+            if 0 < tiw[w] <= 1.:
                 # true positive
                 if gamma[w] >= threshold:
-                    tp += 1
+                    tp += 1 # tiw[w]
                 # false negative
                 else:
-                    fn += 1
+                    fn += 1 # tiw[w]
             # Underlying window is not 100% introgressed
-            elif 0 <= tiw[w] < 1.:
+            elif tiw[w] == 0:
                 # false positive
                 if gamma[w] >= threshold:
-                    fp += 1
+                    fp += 1 # tiw[w]
                 # true negative
                 else:
-                    tn += 1
+                    tn += 1 # tiw[w]
             # something went wrong and tiw shows a value below zero or above 1
             else:
                 print("ERROR in eval: window shows introgression percentage below zero or above 1")
