@@ -5,12 +5,13 @@ import numpy as np
 # eval_accuracy measures the performance of an HMM against (Type 1) true introgressed sites
 # INPUT:
 #       true_windows = numpy array of windows (tiw) containing introgressed sites measured by percentage coverage.
+#                    REMOVED:
 #                      For purposes of clarity will ignore incomplete window edges as they result in Ns
 #                      Treated within this method to only account for 100% introgressed windows
 #       tested_HMM = numpy gamma matrix returned from HMM creation. Represents likelihood of introgression at position
 #                    Should be pre-exponentiated (float probabilities not logs). Input is full numpy array
 #       normalized = Boolean true/false determining behavior of algorithm. Default True
-#                    False will HMM "guesses" as presented: are they over the threshold or not?
+#                    False will evaluate HMM "guesses" as presented: are they over the threshold or not?
 #                    True will adjust HMM "guesses", treating the highest-scoring window as 1 and normalizing other
 #                    probabilities accordingly, then evaluating them in relation to the threshold.
 #       threshold = float representing level of certainty HMM has of true state being introgressed.

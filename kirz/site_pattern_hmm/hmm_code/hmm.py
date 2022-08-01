@@ -105,7 +105,7 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
     # plus one state change from the state that emitted the last character to final state.
     xi = np.zeros((T, N, N))
     
-    
+    # Compute each 2x2 row or "floor" of the matrix from top to bottom. t=0 represents the first transition between observations
     for t in range(T):
         k = Ob[t]
         lp_traverse = np.zeros((N, N))
@@ -137,51 +137,75 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
 
 
 def calc_gamma(xi, N, T):
+    # Must be T columns in the gamma matrix because there are T observed loci
     gamma = np.zeros((T, N))
+    
+    # Compute each row, starting with the first and going down. Each corresponds to a locus
     for t in range(T):
+        
+        # Compute each column, starting with the Species state (i=0) and then the Introgressed state (i=1)
         for i in range(N):
+            
+            # Sum up the probabilities for state i at this position t by combining all relevant instances
+            # where the hidden state could be i at time t
             gamma[t][i] = supp.logsum(xi[t, i, :])
     return gamma
 
 
-# iteratively update A
-# A (transition) [i][j] is the sum of all the
-# transitions from i to j, normalized by the sum
-# of the transitions out of i
 def update_A(N, xi, gamma):
+    # Initialize a blank new transition matrix
     A = np.zeros((N, N))
-    # Sum of all the transitions out of state i
+    # Initialize the sum of all transitions out of i
     trans_out = np.zeros(N)
+    
+    # for every state i in gamma (Species or Neanderthal)
     for i in range(N):
+        # how many transitions out of state i were there
+        # summing probabilities because a confidence of 1 counts as 1 transition, 50% confidence counts as half, etc.
         trans_out[i] = supp.logsum(gamma[:, i])
+    
+    # for every starting state i in xi
     for i in range(N):
+        # for every receiving state j in xi
         for j in range(N):
+            # A (transition) [i][j] is the sum of all the transitions from i to j
+            # This normalized by the previously-calculated sum of the total number of inferred transitions from state i
             A[i][j] = supp.logsum(xi[:, i, j]) - trans_out[i]
+            
     return A
 
 
-# iteratively update B
-# B (emission) [i][k] is the sum of all the
-# transitions out of i when k is observed
-# divided by the sum of transitions out of i
-# CHANGED GAMMA INPUT TO XI
 def update_B(Ob, N, M, T, xi):
+    # Initialize a blank new emission matrix
     B = np.zeros((N, M))
+    # For every state i
     for i in range(N):
-        ksum = np.zeros(M) + log_zero  # ksum[k] is the sum of all i with k
+        # Initialize the matrix of all emissions from state i
+        # ksum[k] is the sum of all i with k
+        ksum = np.zeros(M) + log_zero
+        # for every observed locus t in the sequence
         for t in range(T):
+            # set k to the observation at the current locus
             k = Ob[t]
+            # for every state j
             for j in range(N):
+                # find the sum of all emissions of k from state i when transitioning to each state j and add them
                 ksum[k] = logaddexp(ksum[k], xi[t, i, j])
-        ksum = ksum - supp.logsum(ksum)  # Normalize
+        # Normalize the sum of all emissions of k from that state i by the sum of all emissions at that position
+        ksum = ksum - supp.logsum(ksum)
+        # Set the new emission matrix to the normalized probability of every type of emission k from state i
         B[i, :] = ksum
     return B
 
 
 # iteratively update pi
 def update_pi(N, gamma):
+    # Initialize a blank new initial distribution matrix
     pi = np.zeros(N)
+    # for every state i
     for i in range(N):
+        # The adjusted chances that a observed sequence will start on state i
+        # are set to the probability that the first locus was i in the last iteration of the model
         pi[i] = gamma[0][i]
     return pi
 
