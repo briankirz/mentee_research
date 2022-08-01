@@ -10,120 +10,113 @@ import eval_accuracy as eval
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
 
-
-# TODO: Should I reverse the given | syntax for "given" probabilities?
 def calc_alpha(A, B, pi, Ob, N, T):
-    '''
-    Calculates the alpha matrix with the Forward Algorithm
-    INPUT:
-        - A, a 2x2 array of transition probabilities
-        - B, a 2x2 array of emission probabilities
-        - pi, a 2x1 array of of initial state probabilities
-        - Ob, a string representing the observed sequence (binary-encoded numbers indexed to labels: 0:N::1:C)
-        - N, the number of states
-        - T, the length of the sequence
-    ______________________________________________________
-    OUTPUT: ALPHA MATRIX
-        - Dimensions: (T+1) x N
-        - Definition: The forward variable (a) gives the probability of observing a prefix of the emission sequence and
-          being in some given state at the end of the prefix or a(t)(i) = P(o1, o2, ... ot, q(t) = Si)
-          for all i in {1...N} and 1<=t<=T where T is the number of observations in the sequence
-        - Explanation: The first/second column represents the probability that the model is in the Species/Introgressed
-          state after the first t characters in the sequence. This information is found in the t^th row of the matrix.
-
-        Observation example: NN...C
-        ---------------------------------------------------------------------------
-        | ALPHA     | State 0, or Species           | State 1, or Introgressed    |
-        ---------------------------------------------------------------------------
-        | t=0       | P(first state is S)           | P(first state is I)         |
-        | t=1 (N)   | P(seen N | ends w state S)    | P(seen N | ends w state I)  |
-        | t=2 (NN)  | P(seen NN | ends w state S)   | P(seen NN | ends w state I) |
-        ...
-        | T=len(NN...C) | P((NN...C) | ends up at S)| P((NN...C) | ends w state I)|
-        ---------------------------------------------------------------------------
-
-        - Both values in the last row comprise the total probability of the observed sequence being produced
-          by the HMM.
-    '''
-
-    # Must be T+1 columns in the alpha matrix bc the first one is the state after 0 prefix characters
-    # This should be the same as the initial distribution likelihood found in pi
+    # Must be T+1 columns in the alpha matrix bc the top one is the state after 0 prefix characters
+    # This is the same as the initial distribution likelihood found in pi
     alpha = np.zeros((T + 1, N))
-
-    # initialize the first row to be the initial distribution values (the pi matrix of the HMM)
+    # initialize the first row to be the initial distribution values
     # represents the probabilities of being in some state (S/1st or I/2nd) before seeing any (t=0) observed emissions
     alpha[0, :] = pi
-
-    # Filled in one row at a time, starting with the 2nd row (we've already filled in the 1st row in the last step)
-    # T counts the character number in the sequence.
+    
+    # Compute each row, starting with 2nd row. 1st row filled in last step.
+    # t counts the character number in the sequence.
     for t in range(1, T + 1):
-
+        
         # k stores the character of the previous observed emission
         k = Ob[t - 1]
-
-        # Filling in one column at a time, starting with column 1 (Species state) then column 2 (Introgression state)
+        # Compute each column, starting with 1st (Species state) then 2nd (Introgression state)
         for j in range(N):
-
-            # This placeholder is set to negative infinity the first time each cell is encountered, resetting it.
-            # We need it to store a zero value when logged by logaddexp when calculating the first logsum
-            lprob = log_zero
-
+            
+            # Placeholder is set to negative infinity the first time each cell is encountered, resetting it.
+            # It stores a probability interpreted by logaddexp as zero when calculating the first logsum
+            lprob = np.NINF
             # The i loop occurs in a single cell.
-            # In a single cell, we calculate the sum of probabilities (in log form) of the transitions from all possible
-            # previous states in time t-1 (the previous row) into the new one.
+            # Inside the cell, calculate the sum of probabilities (in log form) of the transitions from all possible
+            # previous states in time t-1 (the previous row) into the new state j.
             # In this case, N=2, meaning there were 2 possible previous states that could have led to the current one
-            # This code asks: what is the probability that each possible scenario (previous state being S or I) led to
-            # our current state j? It then combines those probabilities and closes both timelines.
+            # This code answers: "What is the probability that each possible scenario (previous state being S or I) led to
+            # our current state j?" When the loop is finished, the value of the cell is set to the combination of those probabilities.
             for i in range(N):
+                
                 # lp represents a sum of log probabilities:
                 # (forward variable at time t-1 for state i)
                 # + likelihood that last row's state i transitioned to this state j using the transition matrix A
                 # + the likelihood that state i emitted this observed character k using the emission matrix B
                 lp = alpha[t - 1][i] + A[i][j] + B[i][k]
-
                 # during the first iteration, lprob is reset as equal to lp, as lprob starts set to NINF
-                # the second time around, lp is recalculated and represents the probability that we got to this state
-                # j from the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
+                # the second time around, lp is recalculated and represents the probability that the current state j
+                # was reached from the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
                 # (prob we're in state j if the last state was S + prob we're in state j if the last state was I)
                 lprob = logaddexp(lprob, lp)
-
+                
             # After the probabilities based on both of the cells in the previous row were treated and combined,
-            # we take that final number and set it as the forward variable:
-            # the likelihood we observe prefix (...t) of the observe sequence and end up in state j
+            # the final number is set as the forward variable:
+            # the likelihood we observe prefix (...t) of the observed sequence and end up in state j
             alpha[t][j] = lprob
     return alpha
 
 
 def calc_beta(A, B, Ob, N, T):
+    # Must be T+1 columns in the beta matrix because the bottom one is the state before a 0-character suffix
+    # This is given as 100% in the base case, so we still initialize the matrix to zeroes.
+    # This is because the underlying proability assumed by the logaddexp occurrence is 1 (log(1) = 0).
     beta = np.zeros((T + 1, N))
+    
+    # Compute each row, starting with the 2nd from the bottom. The bottom row was filled out during initialization.
+    # t counts the position of the state relative to the sequence
     for t in range(T - 1, -1, -1):
+        
+        # k stores the character just after (emitted by) the state being investigated
         k = Ob[t]
+        # Compute each column, starting with 1st (Species state) then 2nd (Introgression state)
         for j in range(N):
-            lprob = log_zero
+            
+            # Placeholder is set to negative infinity the first time each cell is encountered, resetting it.
+            # It stores a probability interpreted by logaddexp as zero when calculating the first logsum
+            lprob = np.NINF
+            # The i loop occurs in a single cell, the variable iterating over the states in the previously-calculated row
+            # Inside the cell, calculate the sum of probabilities (in log form) of the transitions from all possible
+            # previous states in time t+1 (the previous/lower row) to the current row t.
+            # This code answers: "What is the probability that each state was arrived at through the emission of
+            # the most recent suffix character k from our current state in column j and a subsequent transition
+            # from state j to i?" When the loop is finished, the value of the cell is set to the combination of those probabilities.
             for i in range(N):
+                
+                # lp represents a sum of log probabilities:
+                # (backward variable at time t+1 for state i)
+                # + likelihood that the lower row's state i transitioned to this state j using the transition matrix A
+                # + the likelihood that state i emitted this observed character k using the emission matrix B
                 lp = beta[t + 1][i] + A[j][i] + B[j][k]
-                #    print(np.exp(lprob))
-                #    print(np.exp(lp))
-                #    print(np.exp(lprob) + np.exp(lp))
-                #    print('--------------------')
+                # during the first iteration, lprob is reset as equal to lp, as lprob starts set to NINF
+                # the second time around, lp is recalculated and represents the probability that the current state j
+                # transitioned the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
+                # (prob we're in state j if the next state is S + prob we're in state j if the next state is I)
                 lprob = logaddexp(lprob, lp)
-            # print('--------------------')
+                
+            # After the proababilities based on both of the cells in the lower row were treated and combined,
+            # the final number is set as the backward variable:
+            # the likelihood we observe suffix(t...) of the observed sequence as a result of state j
             beta[t][j] = lprob
     return beta
 
 
 def calc_xi(A, B, Ob, N, T, alpha, beta):
+    # Must be T columns in the xi matrix because there are T-1 transitions between observed characters,
+    # plus one state change from the state that emitted the last character to final state.
     xi = np.zeros((T, N, N))
+    
+    
     for t in range(T):
         k = Ob[t]
         lp_traverse = np.zeros((N, N))
+        
+        # These loops will circle each "floor" and calculate each cell at the [i, j]th coordiante of that floor based
+        # on the corresponding alpha and beta matrix positions and the transition and emission matrices
         for i in range(N):
             for j in range(N):
-                # print("t = " + str(t))
-                # print("k = " + str(k))
-                # print("i = " + str(i))
-                # print("j = " + str(j))
-                # P(getting to this arc)
+                
+                # lp, or the probability of this transition, is equal to the sum of
+                # P(getting to this state)
                 # P(making this transition)
                 # P(emitting this character)
                 # P(going to the end)
@@ -133,22 +126,13 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
                         + B[i][k]
                         + beta[t + 1][j]
                 )
-                # print("alpha[" + str(t) + "][" + str(i) + "] = log(" + str(np.exp(alpha[t][i])) + ")")
-                # print("A[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(A[i][j])) + ")")
-                # print("B[" + str(i) + "][" + str(k) + "] = log(" + str(np.exp(B[i][k])) + ")")
-                # print("beta[" + str(t+1) + "][" + str(j) + "] = log(" + str(np.exp(beta[t+1][j])) + ")")
                 lp_traverse[i][j] = lp
-                # print("lp_traverse[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(lp)) + ")")
-                # print("---------------------")
-        # Normalize the probability for this time step
+        # Each "room" on floor t has been calculated. Now that we have the values of all four cells, we can calculate
+        # the total probability of all cases on the top floor as the sum of logarithm probabilities within it.
+        # When the "floor" loop is over, this next step "subtracts the logs" (divides the probabilities) of each cell
+        # by the total probability of floor T.
+        # Normalize the probability for this time step (divide by P(O|lambda))
         xi[t, :, :] = lp_traverse - supp.logsum(lp_traverse)
-        # print("---------------------")
-        # print("logsum of floor = " + str(np.exp(supp.logsum(lp_traverse))))
-        # print("---------------------")
-        # print("lp_traverse = " + str(np.exp(lp_traverse)))
-        # print("---------------------")
-        # print("final xi floor = " + str(np.exp(xi[t, :, :])))
-        # print("---------------------")
     return xi
 
 

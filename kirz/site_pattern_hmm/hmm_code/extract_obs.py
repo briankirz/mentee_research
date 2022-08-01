@@ -192,10 +192,9 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # Indexed from 1 - 400
     # Windows is of the format key -> value
     # Window # (1-400) -> [Start position, stop position, (optional var_pos positions)]
-    Windows = genotype_matrix_windows(var_pos, pol_geno_mat, window_size=500)
+    Windows = genotype_matrix_windows(var_pos, pol_geno_mat, window_size=500, sequence_length=20_000_000)
     Wip = calc_window_intro_percent(Windows, true_intro_pos)
 
-    ##############################
     # EXTRACTING OBSERVED SEQUENCE
     # Intialize observed sequence.
     obs_seq = []
@@ -243,4 +242,4 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     return obs_seq_array, Wip, Windows
 
 
-# extract_O(sys.argv[1], sys.argv[2], sys.argv[3])
+extract_O(sys.argv[1], sys.argv[2], sys.argv[3])

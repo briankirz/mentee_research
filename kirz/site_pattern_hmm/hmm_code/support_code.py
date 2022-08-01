@@ -1,5 +1,16 @@
 import sys
 import numpy as np
+
+try:
+    logaddexp = np.logaddexp
+except AttributeError:
+    def logaddexp(logx, logy):
+        if logy - logx > 100:
+            return logy
+        elif logx - logy > 100:
+            return logx
+        minxy = min(logx, logy)
+        return minxy + np.log(np.exp(logx - minxy) + np.exp(logy - minxy))
     
 def logsum(array):
     # If the array is of multiple dimensions, it is 'flattened' along one dimension
