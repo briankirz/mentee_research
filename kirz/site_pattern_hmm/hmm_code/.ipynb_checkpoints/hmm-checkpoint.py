@@ -1,4 +1,7 @@
 import sys
+import re
+import gzip
+import shutil
 import numpy as np
 import extract_obs
 import support_code as supp
@@ -6,10 +9,7 @@ import time
 # Commented out when we don't need to use performance visualization
 import visualizer as vis
 import eval_accuracy as eval
-import warnings
 
-warnings.filterwarnings('ignore', message='divide by zero encountered in log')
-warnings.filterwarnings('ignore', message='invalid value encountered in double_scalars')
 try:
     logaddexp = np.logaddexp
 except AttributeError:
@@ -24,120 +24,113 @@ except AttributeError:
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
 
-
-# TODO: Should I reverse the given | syntax for "given" probabilities?
 def calc_alpha(A, B, pi, Ob, N, T):
-    '''
-    Calculates the alpha matrix with the Forward Algorithm
-    INPUT:
-        - A, a 2x2 array of transition probabilities
-        - B, a 2x2 array of emission probabilities
-        - pi, a 2x1 array of of initial state probabilities
-        - Ob, a string representing the observed sequence (binary-encoded numbers indexed to labels: 0:N::1:C)
-        - N, the number of states
-        - T, the length of the sequence
-    ______________________________________________________
-    OUTPUT: ALPHA MATRIX
-        - Dimensions: (T+1) x N
-        - Definition: The forward variable (a) gives the probability of observing a prefix of the emission sequence and
-          being in some given state at the end of the prefix or a(t)(i) = P(o1, o2, ... ot, q(t) = Si)
-          for all i in {1...N} and 1<=t<=T where T is the number of observations in the sequence
-        - Explanation: The first/second column represents the probability that the model is in the Species/Introgressed
-          state after the first t characters in the sequence. This information is found in the t^th row of the matrix.
-
-        Observation example: NN...C
-        ---------------------------------------------------------------------------
-        | ALPHA     | State 0, or Species           | State 1, or Introgressed    |
-        ---------------------------------------------------------------------------
-        | t=0       | P(first state is S)           | P(first state is I)         |
-        | t=1 (N)   | P(seen N | ends w state S)    | P(seen N | ends w state I)  |
-        | t=2 (NN)  | P(seen NN | ends w state S)   | P(seen NN | ends w state I) |
-        ...
-        | T=len(NN...C) | P((NN...C) | ends up at S)| P((NN...C) | ends w state I)|
-        ---------------------------------------------------------------------------
-
-        - Both values in the last row comprise the total probability of the observed sequence being produced
-          by the HMM.
-    '''
-
-    # Must be T+1 columns in the alpha matrix bc the first one is the state after 0 prefix characters
-    # This should be the same as the initial distribution likelihood found in pi
+    # Must be T+1 columns in the alpha matrix bc the top one is the state after 0 prefix characters
+    # This is the same as the initial distribution likelihood found in pi
     alpha = np.zeros((T + 1, N))
-
-    # initialize the first row to be the initial distribution values (the pi matrix of the HMM)
+    # initialize the first row to be the initial distribution values
     # represents the probabilities of being in some state (S/1st or I/2nd) before seeing any (t=0) observed emissions
     alpha[0, :] = pi
-
-    # Filled in one row at a time, starting with the 2nd row (we've already filled in the 1st row in the last step)
-    # T counts the character number in the sequence.
+    
+    # Compute each row, starting with 2nd row. 1st row filled in last step.
+    # t counts the character number in the sequence.
     for t in range(1, T + 1):
-
+        
         # k stores the character of the previous observed emission
         k = Ob[t - 1]
-
-        # Filling in one column at a time, starting with column 1 (Species state) then column 2 (Introgression state)
+        # Compute each column, starting with 1st (Species state) then 2nd (Introgression state)
         for j in range(N):
-
-            # This placeholder is set to negative infinity the first time each cell is encountered, resetting it.
-            # We need it to store a zero value when logged by logaddexp when calculating the first logsum
-            lprob = log_zero
-
+            
+            # Placeholder is set to negative infinity the first time each cell is encountered, resetting it.
+            # It stores a probability interpreted by logaddexp as zero when calculating the first logsum
+            lprob = np.NINF
             # The i loop occurs in a single cell.
-            # In a single cell, we calculate the sum of probabilities (in log form) of the transitions from all possible
-            # previous states in time t-1 (the previous row) into the new one.
+            # Inside the cell, calculate the sum of probabilities (in log form) of the transitions from all possible
+            # previous states in time t-1 (the previous row) into the new state j.
             # In this case, N=2, meaning there were 2 possible previous states that could have led to the current one
-            # This code asks: what is the probability that each possible scenario (previous state being S or I) led to
-            # our current state j? It then combines those probabilities and closes both timelines.
+            # This code answers: "What is the probability that each possible scenario (previous state being S or I) led to
+            # our current state j?" When the loop is finished, the value of the cell is set to the combination of those probabilities.
             for i in range(N):
+                
                 # lp represents a sum of log probabilities:
                 # (forward variable at time t-1 for state i)
                 # + likelihood that last row's state i transitioned to this state j using the transition matrix A
                 # + the likelihood that state i emitted this observed character k using the emission matrix B
                 lp = alpha[t - 1][i] + A[i][j] + B[i][k]
-
                 # during the first iteration, lprob is reset as equal to lp, as lprob starts set to NINF
-                # the second time around, lp is recalculated and represents the probability that we got to this state
-                # j from the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
+                # the second time around, lp is recalculated and represents the probability that the current state j
+                # was reached from the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
                 # (prob we're in state j if the last state was S + prob we're in state j if the last state was I)
                 lprob = logaddexp(lprob, lp)
-
+                
             # After the probabilities based on both of the cells in the previous row were treated and combined,
-            # we take that final number and set it as the forward variable:
-            # the likelihood we observe prefix (...t) of the observe sequence and end up in state j
+            # the final number is set as the forward variable:
+            # the likelihood we observe prefix (...t) of the observed sequence and end up in state j
             alpha[t][j] = lprob
     return alpha
 
 
 def calc_beta(A, B, Ob, N, T):
+    # Must be T+1 columns in the beta matrix because the bottom one is the state before a 0-character suffix
+    # This is given as 100% in the base case, so we still initialize the matrix to zeroes.
+    # This is because the underlying proability assumed by the logaddexp occurrence is 1 (log(1) = 0).
     beta = np.zeros((T + 1, N))
+    
+    # Compute each row, starting with the 2nd from the bottom. The bottom row was filled out during initialization.
+    # t counts the position of the state relative to the sequence
     for t in range(T - 1, -1, -1):
+        
+        # k stores the character just after (emitted by) the state being investigated
         k = Ob[t]
+        # Compute each column, starting with 1st (Species state) then 2nd (Introgression state)
         for j in range(N):
-            lprob = log_zero
+            
+            # Placeholder is set to negative infinity the first time each cell is encountered, resetting it.
+            # It stores a probability interpreted by logaddexp as zero when calculating the first logsum
+            lprob = np.NINF
+            # The i loop occurs in a single cell, the variable iterating over the states in the previously-calculated row
+            # Inside the cell, calculate the sum of probabilities (in log form) of the transitions from all possible
+            # previous states in time t+1 (the previous/lower row) to the current row t.
+            # This code answers: "What is the probability that each state was arrived at through the emission of
+            # the most recent suffix character k from our current state in column j and a subsequent transition
+            # from state j to i?" When the loop is finished, the value of the cell is set to the combination of those probabilities.
             for i in range(N):
+                
+                # lp represents a sum of log probabilities:
+                # (backward variable at time t+1 for state i)
+                # + likelihood that the lower row's state i transitioned to this state j using the transition matrix A
+                # + the likelihood that state i emitted this observed character k using the emission matrix B
                 lp = beta[t + 1][i] + A[j][i] + B[j][k]
-                #    print(np.exp(lprob))
-                #    print(np.exp(lp))
-                #    print(np.exp(lprob) + np.exp(lp))
-                #    print('--------------------')
+                # during the first iteration, lprob is reset as equal to lp, as lprob starts set to NINF
+                # the second time around, lp is recalculated and represents the probability that the current state j
+                # transitioned the Introgressed state. Now, calling logaddexp(lprob, lp) represents the sum of these:
+                # (prob we're in state j if the next state is S + prob we're in state j if the next state is I)
                 lprob = logaddexp(lprob, lp)
-            # print('--------------------')
+                
+            # After the proababilities based on both of the cells in the lower row were treated and combined,
+            # the final number is set as the backward variable:
+            # the likelihood we observe suffix(t...) of the observed sequence as a result of state j
             beta[t][j] = lprob
     return beta
 
 
 def calc_xi(A, B, Ob, N, T, alpha, beta):
+    # Must be T columns in the xi matrix because there are T-1 transitions between observed characters,
+    # plus one state change from the state that emitted the last character to final state.
     xi = np.zeros((T, N, N))
+    
+    # Compute each 2x2 row or "floor" of the matrix from top to bottom. t=0 represents the first transition between observations
     for t in range(T):
         k = Ob[t]
         lp_traverse = np.zeros((N, N))
+        
+        # These loops will circle each "floor" and calculate each cell at the [i, j]th coordiante of that floor based
+        # on the corresponding alpha and beta matrix positions and the transition and emission matrices
         for i in range(N):
             for j in range(N):
-                # print("t = " + str(t))
-                # print("k = " + str(k))
-                # print("i = " + str(i))
-                # print("j = " + str(j))
-                # P(getting to this arc)
+                
+                # lp, or the probability of this transition, is equal to the sum of
+                # P(getting to this state)
                 # P(making this transition)
                 # P(emitting this character)
                 # P(going to the end)
@@ -147,71 +140,86 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
                         + B[i][k]
                         + beta[t + 1][j]
                 )
-                # print("alpha[" + str(t) + "][" + str(i) + "] = log(" + str(np.exp(alpha[t][i])) + ")")
-                # print("A[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(A[i][j])) + ")")
-                # print("B[" + str(i) + "][" + str(k) + "] = log(" + str(np.exp(B[i][k])) + ")")
-                # print("beta[" + str(t+1) + "][" + str(j) + "] = log(" + str(np.exp(beta[t+1][j])) + ")")
                 lp_traverse[i][j] = lp
-                # print("lp_traverse[" + str(i) + "][" + str(j) + "] = log(" + str(np.exp(lp)) + ")")
-                # print("---------------------")
-        # Normalize the probability for this time step
+        # Each "room" on floor t has been calculated. Now that we have the values of all four cells, we can calculate
+        # the total probability of all cases on the top floor as the sum of logarithm probabilities within it.
+        # When the "floor" loop is over, this next step "subtracts the logs" (divides the probabilities) of each cell
+        # by the total probability of floor T.
+        # Normalize the probability for this time step (divide by P(O|lambda))
         xi[t, :, :] = lp_traverse - supp.logsum(lp_traverse)
-        # print("---------------------")
-        # print("logsum of floor = " + str(np.exp(supp.logsum(lp_traverse))))
-        # print("---------------------")
-        # print("lp_traverse = " + str(np.exp(lp_traverse)))
-        # print("---------------------")
-        # print("final xi floor = " + str(np.exp(xi[t, :, :])))
-        # print("---------------------")
     return xi
 
 
 def calc_gamma(xi, N, T):
+    # Must be T columns in the gamma matrix because there are T observed loci
     gamma = np.zeros((T, N))
+    
+    # Compute each row, starting with the first and going down. Each corresponds to a locus
     for t in range(T):
+        
+        # Compute each column, starting with the Species state (i=0) and then the Introgressed state (i=1)
         for i in range(N):
+            
+            # Sum up the probabilities for state i at this position t by combining all relevant instances
+            # where the hidden state could be i at time t
             gamma[t][i] = supp.logsum(xi[t, i, :])
     return gamma
 
 
-# iteratively update A
-# A (transition) [i][j] is the sum of all the
-# transitions from i to j, normalized by the sum
-# of the transitions out of i
 def update_A(N, xi, gamma):
+    # Initialize a blank new transition matrix
     A = np.zeros((N, N))
-    # Sum of all the transitions out of state i
+    # Initialize the sum of all transitions out of i
     trans_out = np.zeros(N)
+    
+    # for every state i in gamma (Species or Neanderthal)
     for i in range(N):
+        # how many transitions out of state i were there
+        # summing probabilities because a confidence of 1 counts as 1 transition, 50% confidence counts as half, etc.
         trans_out[i] = supp.logsum(gamma[:, i])
+    
+    # for every starting state i in xi
     for i in range(N):
+        # for every receiving state j in xi
         for j in range(N):
+            # A (transition) [i][j] is the sum of all the transitions from i to j
+            # This normalized by the previously-calculated sum of the total number of inferred transitions from state i
             A[i][j] = supp.logsum(xi[:, i, j]) - trans_out[i]
+            
     return A
 
 
-# iteratively update B
-# B (emission) [i][k] is the sum of all the
-# transitions out of i when k is observed
-# divided by the sum of transitions out of i
-# CHANGED GAMMA INPUT TO XI
 def update_B(Ob, N, M, T, xi):
+    # Initialize a blank new emission matrix
     B = np.zeros((N, M))
+    # For every state i
     for i in range(N):
-        ksum = np.zeros(M) + log_zero  # ksum[k] is the sum of all i with k
+        # Initialize the matrix of all emissions from state i
+        # ksum[k] is the sum of all i with k
+        ksum = np.zeros(M) + log_zero
+        # for every observed locus t in the sequence
         for t in range(T):
+            # set k to the observation at the current locus
             k = Ob[t]
+            # for every state j
             for j in range(N):
+                # find the sum of all emissions of k from state i when transitioning to each state j and add them
                 ksum[k] = logaddexp(ksum[k], xi[t, i, j])
-        ksum = ksum - supp.logsum(ksum)  # Normalize
+        # Normalize the sum of all emissions of k from that state i by the sum of all emissions at that position
+        ksum = ksum - supp.logsum(ksum)
+        # Set the new emission matrix to the normalized probability of every type of emission k from state i
         B[i, :] = ksum
     return B
 
 
 # iteratively update pi
 def update_pi(N, gamma):
+    # Initialize a blank new initial distribution matrix
     pi = np.zeros(N)
+    # for every state i
     for i in range(N):
+        # The adjusted chances that a observed sequence will start on state i
+        # are set to the probability that the first locus was i in the last iteration of the model
         pi[i] = gamma[0][i]
     return pi
 
@@ -265,7 +273,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # O = "NNCCN"  # Dummy Observed Sequence for testing/explanation
     # T is equal to the length of the sequence
     T = len(O)
-    # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents that I included to keep track of the true
+    # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents included to keep track of the true
     # introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
     # It has the structure (Window # -> Percentage of Introgression)
     Win_intro_percent = extraction[1]
@@ -290,7 +298,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # All calculations are done in log-space to prevent point-underflows
     # One potential improvement(?) to this method is to do some random massages here to find new local maxima
 
-    # TODO: Draw these arrays out visually to prevent mistakes from switching
     # Transition Array (2x2)
     A = np.array(((1 - s, s), (s, 1 - s)))
     lp_A = np.log(A)
@@ -363,36 +370,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # Stage 3: Checkpoint that marks time after B-W is complete
     stage3 = time.time()
 
-    # check to see if there was any improvement
-    # if optimization_count > 0:
-        # print('\nadjusted A\n', np.exp(lp_A))
-        # print('\nadjusted B\n', np.exp(lp_B))
-        # print('\nadjusted pi\n', np.exp(lp_pi))
-        # print('______________________________')
-        # print('\nnaive alpha\n', np.exp(alpha))
-        # print('\nBW alpha\n', np.exp(bw_alpha))
-        # print('\nnaive beta\n', np.exp(beta))
-        # print('\nBW beta\n', np.exp(bw_beta))
-        # print('\nnaive xi\n', np.exp(xi))
-        # print('\nBW xi\n', np.exp(bw_xi))
-        # print('______________________________')
-        # print('\nnaive gamma\n', np.exp(gamma))
-        # print('\nnaive gamma shape\n', np.exp(gamma).shape)
-        # print('\narray of where unlogged gamma has nonzero values\n', np.where(np.exp(gamma)[:, 0] > 0)[0])
-        # print('\narray of where unlogged gamma has introgression chances above 1%\n',
-        #       np.where(np.exp(gamma)[:, 1] > .001)[0])
-        # print('\narray of where unlogged gamma has introgression chances above 90%\n',
-        #       np.where(np.exp(gamma)[:, 1] > .9)[0])
-        # print('______________________________')
-        # print('\nBW gamma\n', np.exp(bw_gamma))
-        # print('\nBW gamma shape\n', np.exp(bw_gamma).shape)
-        # print('\narray of where unlogged bw_gamma has nonzero values\n', np.where(np.exp(bw_gamma)[:, 0] > 0)[0])
-        # print('\narray of where unlogged bw_gamma has introgression chances above 1%\n',
-        #       np.where(np.exp(bw_gamma)[:, 1] > .001)[0])
-        # print('\narray of where unlogged bw_gamma has introgression chances above 90%\n',
-        #       np.where(np.exp(bw_gamma)[:, 1] > .9)[0])
-        # print('______________________________')
-
     # EXPRESS THE RESULTS IN MATPLOTLIB
 
     # Makes sure All_gammas is runnign properly
@@ -442,16 +419,13 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
 
     # TODO: Create Results Numpyarray
     # Results is a numpy array that will be filled and exported with all the results of a single rep id
-    # It has columns containing the following information:
-    # Window Start position | Window Stop position | True Introgression % | BW{X} gamma | BW{X+1} gamma | BW{X+2} gamma
     num_windows = len(Windows)
+    # adding extra column to show observation labels
+    results = np.zeros((num_windows, optimization_limit + 4))
+    # The observations are found in column index 3
+    observation_col_index = 3
 
-
-
-    results = np.zeros((num_windows, optimization_limit + 3))
-
-    print(results.shape)
-
+    # recording results
     for key in Windows:
         # initializing starts
         results[key-1][0] = Windows[key][0]
@@ -459,75 +433,96 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
         results[key-1][1] = Windows[key][1]
         # initializing true introgression percentages
         results[key-1][2] = Win_intro_percent[key]
+        # indicating window labels (1 = C, 0 = N)
+        results[key-1][3] = Ob[key-1]
     # iterating through all baum-welch gamma matrices
     for g in range(0, optimization_limit):
         # for each particular window position in gamma, what is the percentage change of introgression?
         for w in range(0, num_windows):
-            results[w][g + 3] = np.exp(All_gammas[g][w][1])
+            results[w][g + 4] = np.exp(All_gammas[g][w][1])
 
-    print(results.shape)
 
-    np.savetxt('/Users/briankirz/Downloads/testing_results.csv.gz',
+# OUTPUTTING RESULTS
+# '/Users/briankirz/Documents/GitHub/mentee_research/kirz/site_pattern_hmm/hmm_code/hmm_function_results.csv.gz'
+    np.savetxt(o_results,
                results,
                fmt='%1.3f',
-               delimiter=',\t',
+               delimiter='\t',
                newline='\n',
                )
-
-
+    # Copy the results into a text file
+    with gzip.open('hmm_function_results.csv.gz', 'rb') as f_in:
+        with open('hmm_function_results.txt', 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+            
+    # Optional: Change the textfile to reflect 'N' or 'C'
+    # instead of 0 or 1 in the Observed label column for better searching
+    with open('hmm_function_results.txt', 'r') as f_in:
+        with open('hmm_function_results_CN.txt', 'w') as f_out:
+            lines = f_in.readlines()
+            for line in lines:
+                split_line = re.split(r'\t', line)
+                # initialize new line with first element of original 
+                newline = split_line[0]
+                # if the current column index is the same as the observation
+                # we exclude the first element because it doesn't fit the \t recurrence
+                for column in range (1, len(split_line)):
+                    if column == observation_col_index:
+                        # replace the element with C
+                        if split_line[observation_col_index] == '1.000':
+                            newline += ('\tC')
+                        # replace the element with N
+                        elif split_line[observation_col_index] == '0.000':
+                            newline += ('\tN')
+                        else:
+                            print("ERROR: value in observation column not 1 or 0")
+                    # copy all other columns normally
+                    else:
+                        newline += ('\t'+split_line[column])
+                # copy complete new line in new file
+                f_out.write(newline)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     # TODO: Writing to output textfile
 
-    results_txt = o_results
-    with open(results_txt, 'w') as out:
+#     results_txt = o_results
+#     with open(results_txt, 'w') as out:
 
-        # TODO: Complex regex for deriving the rep id number from the filepath loci
-        rep_id_number = 1
-        out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
+#         # TODO: Complex regex for deriving the rep id number from the filepath loci
+#         rep_id_number = 1
+#         out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
 
-        out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
-        # Commented out because I think it's unnecessary
-        # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
+#         out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
+#         # Commented out because I think it's unnecessary
+#         # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
 
-        # TODO: Runtime analysis
+#         # TODO: Runtime analysis
 
-        # makes manipulating format easier
-        stage1_time = "{:.2f}".format(stage1 - start)
-        out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
+#         # makes manipulating format easier
+#         stage1_time = "{:.2f}".format(stage1 - start)
+#         out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
 
-        stage2 = stage2 - start
-        stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
-        stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
-        stage2_time = stage2_minutes + stage2_seconds
-        out.write('\nRuntime for running Naive HMM: ' + stage2_time)
+#         stage2 = stage2 - start
+#         stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
+#         stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
+#         stage2_time = stage2_minutes + stage2_seconds
+#         out.write('\nRuntime for running Naive HMM: ' + stage2_time)
 
-        stage3 = stage3 - start
-        stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
-        stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
-        stage3_time = stage3_minutes + stage3_seconds
-        out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
+#         stage3 = stage3 - start
+#         stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
+#         stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
+#         stage3_time = stage3_minutes + stage3_seconds
+#         out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
 
-        # TODO: True Introgressed Windows
-        # out.write('\nTrue Introgressed Windows: ' + )
-
-        # TODO: Windows with >90%  chance of being introgressed according to HMMs %5
-
-        # Naive HMM windows
-
-        # Loop that prints each 5th HMM after 5
-
-        # TODO: RESULTS
-
-        # Naive HMM results
-
-        # HMM % 5 results
-
-        # Best HMM results
-
-        # False Positive Rate:
-        # True Positive Rate (sensitivity):
-        # False Negative Rate (miss rate):
-        # True Negative Rate (specificity):
 
     return np.exp(gamma)
 

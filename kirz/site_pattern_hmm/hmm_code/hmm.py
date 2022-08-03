@@ -1,4 +1,7 @@
 import sys
+import re
+import gzip
+import shutil
 import numpy as np
 import extract_obs
 import support_code as supp
@@ -6,6 +9,17 @@ import time
 # Commented out when we don't need to use performance visualization
 import visualizer as vis
 import eval_accuracy as eval
+
+try:
+    logaddexp = np.logaddexp
+except AttributeError:
+    def logaddexp(logx, logy):
+        if logy - logx > 100:
+            return logy
+        elif logx - logy > 100:
+            return logx
+        minxy = min(logx, logy)
+        return minxy + np.log(np.exp(logx - minxy) + np.exp(logy - minxy))
 
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
@@ -259,7 +273,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # O = "NNCCN"  # Dummy Observed Sequence for testing/explanation
     # T is equal to the length of the sequence
     T = len(O)
-    # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents that I included to keep track of the true
+    # ... and Win_intro_percent, a Dictionary of 500bp-bins and their contents included to keep track of the true
     # introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
     # It has the structure (Window # -> Percentage of Introgression)
     Win_intro_percent = extraction[1]
@@ -284,7 +298,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # All calculations are done in log-space to prevent point-underflows
     # One potential improvement(?) to this method is to do some random massages here to find new local maxima
 
-    # TODO: Draw these arrays out visually to prevent mistakes from switching
     # Transition Array (2x2)
     A = np.array(((1 - s, s), (s, 1 - s)))
     lp_A = np.log(A)
@@ -406,13 +419,11 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
 
     # TODO: Create Results Numpyarray
     # Results is a numpy array that will be filled and exported with all the results of a single rep id
-    # It has columns containing the following information:
-    # Window Start position | Window Stop position | True Introgression % | BW{X} gamma | BW{X+1} gamma | BW{X+2} gamma
     num_windows = len(Windows)
-
-
-    # adding extra column at the end to show window labels
+    # adding extra column to show observation labels
     results = np.zeros((num_windows, optimization_limit + 4))
+    # The observations are found in column index 3
+    observation_col_index = 3
 
     # recording results
     for key in Windows:
@@ -431,12 +442,55 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
             results[w][g + 4] = np.exp(All_gammas[g][w][1])
 
 
-    np.savetxt('/Users/briankirz/Downloads/testing_results.csv.gz',
+# OUTPUTTING RESULTS
+# '/Users/briankirz/Documents/GitHub/mentee_research/kirz/site_pattern_hmm/hmm_code/hmm_function_results.csv.gz'
+    np.savetxt(o_results,
                results,
                fmt='%1.3f',
-               delimiter=',',
+               delimiter='\t',
                newline='\n',
                )
+    # Copy the results into a text file
+    with gzip.open('hmm_function_results.csv.gz', 'rb') as f_in:
+        with open('hmm_function_results.txt', 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+            
+    # Optional: Change the textfile to reflect 'N' or 'C'
+    # instead of 0 or 1 in the Observed label column for better searching
+    with open('hmm_function_results.txt', 'r') as f_in:
+        with open('hmm_function_results_CN.txt', 'w') as f_out:
+            lines = f_in.readlines()
+            for line in lines:
+                split_line = re.split(r'\t', line)
+                # initialize new line with first element of original 
+                newline = split_line[0]
+                # if the current column index is the same as the observation
+                # we exclude the first element because it doesn't fit the \t recurrence
+                for column in range (1, len(split_line)):
+                    if column == observation_col_index:
+                        # replace the element with C
+                        if split_line[observation_col_index] == '1.000':
+                            newline += ('\tC')
+                        # replace the element with N
+                        elif split_line[observation_col_index] == '0.000':
+                            newline += ('\tN')
+                        else:
+                            print("ERROR: value in observation column not 1 or 0")
+                    # copy all other columns normally
+                    else:
+                        newline += ('\t'+split_line[column])
+                # copy complete new line in new file
+                f_out.write(newline)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     # TODO: Writing to output textfile
 
@@ -469,27 +523,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
 #         stage3_time = stage3_minutes + stage3_seconds
 #         out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
 
-#         # TODO: True Introgressed Windows
-        # out.write('\nTrue Introgressed Windows: ' + )
-
-        # TODO: Windows with >90%  chance of being introgressed according to HMMs %5
-
-        # Naive HMM windows
-
-        # Loop that prints each 5th HMM after 5
-
-        # TODO: RESULTS
-
-        # Naive HMM results
-
-        # HMM % 5 results
-
-        # Best HMM results
-
-        # False Positive Rate:
-        # True Positive Rate (sensitivity):
-        # False Negative Rate (miss rate):
-        # True Negative Rate (specificity):
 
     return np.exp(gamma)
 

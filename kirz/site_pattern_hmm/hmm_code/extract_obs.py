@@ -55,11 +55,11 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
     # Extract the columns into numpy arrays and round.
     # Sorting makes iterating easier. Not changing any start positions. intro_starts is official starting positions
     intro_starts = np.sort(np.round(true_intro_pos[:, 0]))
-    print('Starts: {0}'.format(intro_starts))
+    # print('Starts: {0}'.format(intro_starts))
     intro_stops = np.sort(np.round(true_intro_pos[:, 1]))
-    print('Stops: {0}'.format(intro_stops))
+    # print('Stops: {0}'.format(intro_stops))
     intro_sizes = np.sort(intro_stops - intro_starts)
-    print('Sizes: {0}'.format(intro_sizes))
+    # print('Sizes: {0}'.format(intro_sizes))
 
     # The index of the true introgression segment in start/stop/sizes
     intro_index = 0
@@ -181,12 +181,11 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # Inspect the tree-sequence summary.
     # rep_id_1_mts
 
-    # TODO: NON-HARDCODED
+    # NON-HARDCODED
     var_pos = np.loadtxt(var_pos, delimiter=',')
     # Load the genotype matrix.
     pol_geno_mat = np.loadtxt(pol_geno_mat, dtype=int, delimiter=',')
     # Load the introgressed region dataframe.
-    # true_intro_pos = pd.read_csv(true_intro_pos, float_precision='round_trip')
     true_intro_pos = np.loadtxt(true_intro_pos, delimiter=',')
 
     # Indexed from 1 - 400
@@ -206,8 +205,8 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     for key in Windows:
         # Extract the values for the window key.
         window_vals = Windows[key]
-        # Print the tracker for me.
-        print('there are {0} variants in window {1}'.format(len(window_vals[2:]), key))
+        # Print the tracker
+        # print('there are {0} variants in window {1}'.format(len(window_vals[2:]), key))
         # If there are variants in that window. Does this mean a window with a single 'C' in it gets left out? NO
         # Typically Window[key] gives [start, stop]. If there are 1 or more variants then the length is greater than 2
         if len(window_vals) > 2:
@@ -215,27 +214,27 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
             variants = np.asarray(window_vals[2:], dtype=np.int32)
             # Subset the genotype matrix for that window.
             window_geno_mat = pol_geno_mat[variants, :]
-            print(window_geno_mat)
+            # print(window_geno_mat)
             # Define what C matrix would look like given an arbitrary number of variants.
             c_mat = np.tile(c_pattern, (window_geno_mat.shape[0], 1))
             # If the C matrix is equal to the windowed matrix declare it consistent.
             if np.array_equal(c_mat, window_geno_mat):
-                print('C')
+                # print('C')
                 obs_seq.append('C')
             # Else declare the window non-consistent.
             else:
-                print('N')
+                # print('N')
                 obs_seq.append('N')
         # If there are no variants in the window declare in non-consistent.
         else:
-            print('N')
+            # print('N')
             obs_seq.append('N')
     # Intialize the end time.
     end = time.time()
     # Convert the observation sequence list to an array.
     obs_seq_array = np.asarray(obs_seq)
 
-    print('there are {0} many consistent observations'.format(np.count_nonzero(obs_seq_array == 'C')))
+    # print('there are {0} many consistent observations'.format(np.count_nonzero(obs_seq_array == 'C')))
     # print('the consistent observations occur in window(s) {0}'.format(np.where(obs_seq_array == 'C')))
     # print('the run time for generating one observed sequence is {0} minutes'.format((end - start) / float(60)))
 
