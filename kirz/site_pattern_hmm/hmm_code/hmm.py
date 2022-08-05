@@ -196,7 +196,7 @@ def update_B(Ob, N, M, T, xi):
     for i in range(N):
         # Initialize the matrix of all emissions from state i
         # ksum[k] is the sum of all i with k
-        ksum = np.zeros(M) + log_zero
+        ksum = np.zeros(M) + np.NINF
         # for every observed locus t in the sequence
         for t in range(T):
             # set k to the observation at the current locus
@@ -310,7 +310,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     lp_pi = np.log(pi)
 
     # Initialize log-likelihood trackers and print initial inference
-    logP_old = log_zero
+    logP_old = np.NINF
     alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T)
     logP_new = supp.logsum(alpha[T, :])
 
@@ -342,7 +342,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
         # recording optimization count / performance progress
         if optimization_count >= 1:
             print("Optimization count " + str(optimization_count))
-            print("Improvement of " + str(logP_new - logP_old) + " from last model")
+            print("Improvement of " + str(np.exp(logP_new - logP_old)) + " from last model")
             All_gammas[optimization_count] = bw_gamma
         # we set it to just run once
         elif optimization_count == 0:
