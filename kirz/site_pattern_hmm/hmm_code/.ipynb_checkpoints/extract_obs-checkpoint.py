@@ -1,7 +1,6 @@
 import sys
 import gzip
 import numpy as np
-import pandas as pd
 import time
 
 
@@ -241,4 +240,4 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     return obs_seq_array, Wip, Windows
 
 
-extract_O(sys.argv[1], sys.argv[2], sys.argv[3])
+# extract_O(sys.argv[1], sys.argv[2], sys.argv[3])

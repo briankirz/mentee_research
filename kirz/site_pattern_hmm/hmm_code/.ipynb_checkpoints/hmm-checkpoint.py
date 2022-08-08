@@ -231,7 +231,7 @@ def update_pi(N, gamma):
 # Output:
 #   o_results: name of text file
 #   TODO: Explain
-def hmm(i_loci, i_ancestries, i_true_states, o_results):
+def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
     loci = i_loci
     ancestries = i_ancestries
     true_states = i_true_states
@@ -261,7 +261,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # Should results be normalized based on relative probability? Prufer leaves this unclear
     normalized = False
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
-    optimization_limit = 20
+    optimization_limit = opt_limit
     # Remember that since we count the Naive HMM as BW# = 0, this will result in 4 optimization rounds.
     # If you want to run 5 rounds, put 6
 
@@ -296,8 +296,7 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
 
     # Initialize A (the Transition Matrix), B (the Emission Matrix), and pi (the Starting Distribution Matrix)
     # All calculations are done in log-space to prevent point-underflows
-    # One potential improvement(?) to this method is to do some random massages here to find new local maxima
-
+    
     # Transition Array (2x2)
     A = np.array(((1 - s, s), (s, 1 - s)))
     lp_A = np.log(A)
@@ -370,15 +369,6 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
     # Stage 3: Checkpoint that marks time after B-W is complete
     stage3 = time.time()
 
-    # EXPRESS THE RESULTS IN MATPLOTLIB
-
-    # Makes sure All_gammas is runnign properly
-    # print(len(All_gammas.keys()))
-    # print(All_gammas[0])
-    # print(All_gammas[0].shape)
-    # print(All_gammas[0] == gamma)
-    # print(All_gammas[optimization_limit - 1] == bw_gamma)
-
     # TODO: PERFORMANCES
     # Creates Y rows X 4 columns array to record performances, for each Yth step in Baum-Welch
     performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
@@ -444,21 +434,21 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
 
 # OUTPUTTING RESULTS
 # '/Users/briankirz/Documents/GitHub/mentee_research/kirz/site_pattern_hmm/hmm_code/hmm_function_results.csv.gz'
-    np.savetxt(o_results,
+    np.savetxt('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(rep_id),
                results,
                fmt='%1.3f',
                delimiter='\t',
                newline='\n',
                )
     # Copy the results into a text file
-    with gzip.open('hmm_function_results.csv.gz', 'rb') as f_in:
-        with open('hmm_function_results.txt', 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+#    with gzip.open('hmm_function_results.csv.gz', 'rb') as f_in:
+#        with open('hmm_function_results.txt', 'wb') as f_out:
+#            shutil.copyfileobj(f_in, f_out)
             
     # Optional: Change the textfile to reflect 'N' or 'C'
     # instead of 0 or 1 in the Observed label column for better searching
-    with open('hmm_function_results.txt', 'r') as f_in:
-        with open('hmm_function_results_CN.txt', 'w') as f_out:
+    with gzip.open('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(str(sys.argv[1])), 'rb') as f_in:
+        with open('./hmm_results/prufer_results_rep_id_{0}_CN.csv.gz'.format(str(sys.argv[1])), 'w') as f_out:
             lines = f_in.readlines()
             for line in lines:
                 split_line = re.split(r'\t', line)
@@ -481,54 +471,18 @@ def hmm(i_loci, i_ancestries, i_true_states, o_results):
                         newline += ('\t'+split_line[column])
                 # copy complete new line in new file
                 f_out.write(newline)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-    # TODO: Writing to output textfile
+# Read in sys args.
+rep = str(sys.argv[1])
+opt_iter_lim = int(sys.argv[2])
 
-#     results_txt = o_results
-#     with open(results_txt, 'w') as out:
-
-#         # TODO: Complex regex for deriving the rep id number from the filepath loci
-#         rep_id_number = 1
-#         out.write('Rep ID #' + str(rep_id_number) + " results:\n\n")
-
-#         out.write('There are {0} consistent sites in the observed sequence'.format(np.count_nonzero(O == 'C')) + '\n')
-#         # Commented out because I think it's unnecessary
-#         # out.write('The consistent sites observations occur in window(s)\n{0}'.format(np.where(O == 'C')) + '\n')
-
-#         # TODO: Runtime analysis
-
-#         # makes manipulating format easier
-#         stage1_time = "{:.2f}".format(stage1 - start)
-#         out.write('\nRuntime for generating observation sequence: {0} seconds'.format(stage1_time))
-
-#         stage2 = stage2 - start
-#         stage2_minutes = str("{:.0f}".format((stage2 - stage2 % 60) / 60)) + ' minutes '
-#         stage2_seconds = str("{:.2f}".format(stage2 % 60)) + ' seconds'
-#         stage2_time = stage2_minutes + stage2_seconds
-#         out.write('\nRuntime for running Naive HMM: ' + stage2_time)
-
-#         stage3 = stage3 - start
-#         stage3_minutes = str("{:.0f}".format((stage3 - stage3 % 60) / 60)) + ' minutes '
-#         stage3_seconds = str("{:.2f}".format(stage3 % 60)) + ' seconds'
-#         stage3_time = stage3_minutes + stage3_seconds
-#         out.write('\nRuntime for ' + str(optimization_count) + ' steps of Baum-Welch: ' + stage3_time)
+# Load the simulated data.
+var_pos = './sim_data/rep_id_{0}_var_pos.csv.gz'.format(rep)
+geno_mat = './sim_data/rep_id_{0}_geno_mat.csv.gz'.format(rep)
+intro_pos = './sim_data/rep_id_{0}_intro_pos.csv.gz'.format(rep)
 
 
-    return np.exp(gamma)
 
+hmm(var_pos, geno_mat, intro_pos, rep, opt_iter)    
 
-# test command
-# sh hmm.sh var_pos pol_geno_mat intro_pos results.txt
-# sh hmm.sh ../cs282_sim_data/rep_id_1_var_pos.csv.gz ../cs282_sim_data/rep_id_1_geno_mat.csv.gz ../cs282_sim_data/rep_id_1_intro_pos.csv.gz rep_id_1_results.txt
-
-hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+# hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
