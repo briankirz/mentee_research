@@ -366,8 +366,6 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
         if supp.logsum(bw_alpha[T, :]) > logP_old:
             lp_A, lp_B, lp_pi = new_A, new_B, new_pi
             logP_new = supp.logsum(bw_alpha[T, :])
-    # Stage 3: Checkpoint that marks time after B-W is complete
-    stage3 = time.time()
 
     # TODO: PERFORMANCES
     # Creates Y rows X 4 columns array to record performances, for each Yth step in Baum-Welch
