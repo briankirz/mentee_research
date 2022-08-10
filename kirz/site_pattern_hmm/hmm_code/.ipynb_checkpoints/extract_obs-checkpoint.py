@@ -70,7 +70,8 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
             # clean up starting window
             Win_intro_percent[start_win] += (Windows[start_win][1] - intro_starts[t]) / 500
             # clean up stopping window
-            Win_intro_percent[stop_win] += (intro_stops[t] - Windows[stop_win][0]) / 500
+            if stop_win <= len(Windows):
+                Win_intro_percent[stop_win] += (intro_stops[t] - Windows[stop_win][0]) / 500
             
     return Win_intro_percent
 
