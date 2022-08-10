@@ -445,11 +445,11 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
             
     # Optional: Change the textfile to reflect 'N' or 'C'
     # instead of 0 or 1 in the Observed label column for better searching
-    with gzip.open('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(str(sys.argv[1])), 'rb') as f_in:
+    with gzip.open('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(str(sys.argv[1])), 'rt') as f_in:
         with open('./hmm_results/prufer_results_rep_id_{0}_CN.csv.gz'.format(str(sys.argv[1])), 'w') as f_out:
             lines = f_in.readlines()
             for line in lines:
-                split_line = re.split(r'\t', line)
+                split_line = re.split('\t', line)
                 # initialize new line with first element of original 
                 newline = split_line[0]
                 # if the current column index is the same as the observation

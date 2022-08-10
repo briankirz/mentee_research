@@ -32,119 +32,161 @@ def genotype_matrix_windows(
                 break
     return windows
 
-
 def calc_window_intro_percent(Binned_windows, true_introgression_positions):
-    # Creates a dictionary of windows that correspond to the % they are covered by introgressed segments
-    # INPUT:
-    # Dictionary variant_Windows = {} where 1 -> [0, 500), 2 -> [500, 100), ..., 40_000 -> [19_999_500, 20_000_000)
-    #                             The key is the window number from 1 to 40,000 and the value is an array.
-    #                             The first two elements of this array are the start and stop positions of the window
-    #                             The following elements of the array are the positions of the variants, if any
-    # nparray true_introgression_positions = an nparray with the start and stop locations of the introgressed segments
-    # Output:
-    # - Wip (window_introgression_percent), a Dictionary of 500bp-bins and their contents that I included to keep track of
-    # the true introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
-    # It has the structure (Window # -> Percentage of Introgression as a float between 0 and 1
-
+    
     Windows = Binned_windows
     true_intro_pos = true_introgression_positions
+    
     # Initializing dictionary of Window Introgression Percentages
     Win_intro_percent = {}
-
     # Extract the columns into numpy arrays and round.
-    # Sorting makes iterating easier. Not changing any start positions. intro_starts is official starting positions
+    # Sorting makes iterating easier. Not changing any start positions. intro_starts is 'official' starting position
     intro_starts = np.sort(np.round(true_intro_pos[:, 0]))
-    # print('Starts: {0}'.format(intro_starts))
     intro_stops = np.sort(np.round(true_intro_pos[:, 1]))
-    # print('Stops: {0}'.format(intro_stops))
-    intro_sizes = np.sort(intro_stops - intro_starts)
-    # print('Sizes: {0}'.format(intro_sizes))
-
-    # The index of the true introgression segment in start/stop/sizes
-    intro_index = 0
+    intro_sizes = intro_stops - intro_starts
+    start_mods = intro_starts % 500
+    stop_mods = intro_stops % 500
+    start_windows = ((intro_starts - start_mods) / 500) + 1
+    stop_windows = ((intro_stops - stop_mods) / 500) + 1
+    
+    # Initialize all windows to 0% first
     for key in Windows:
-        # if intro_index is the same as the number of true introgressed segments, we can end and assign the rest 0
-        if intro_index == intro_sizes.shape[0]:
-            Win_intro_percent[key] = 0.
+        Win_intro_percent[key] = 0.
+    
+    # For each segment
+    for t in range(intro_sizes.shape[0]):
+        start_win = int(start_windows[t])
+        stop_win = int(stop_windows[t])
+        
+        # if segment within a single window
+        if start_win == stop_win:
+            Win_intro_percent[start_win] += intro_sizes[t] / 500
+        # if segment not in a single window
         else:
-            # Tracking indices
-            # integer starting and ending positions of the true introgressed segments
-            curr_start = int(intro_starts[intro_index])
-            curr_stop = int(intro_stops[intro_index])
-            # integer offset of curr_start and curr_stop from most recent window
-            curr_start_mod = int(intro_starts[intro_index] % 500)
-            curr_stop_mod = int(intro_stops[intro_index] % 500)
-            # current window that contains the beginning or end of the current segment
-            curr_start_window = int(((curr_start - curr_start_mod) / 500) + 1)
-            curr_stop_window = int(((curr_stop - curr_stop_mod) / 500) + 1)            
-            # boolean that tracks whether the segment falls completely within a window
-            tiny_intro = curr_stop - curr_start < 500
+            # all fully introgressed segments
+            for f in range(start_win + 1, stop_win):
+                Win_intro_percent[f] = 1.
             
+            # clean up starting window
+            Win_intro_percent[start_win] += (Windows[start_win][1] - intro_starts[t]) / 500
+            # clean up stopping window
+            Win_intro_percent[stop_win] += (intro_stops[t] - Windows[stop_win][0]) / 500
             
-            if key == 2229:
-                print(tiny_intro)
-                print(key)
-                print(curr_start)
-                print(curr_stop)
-                print(curr_start_mod)
-                print(curr_stop_mod)
-                print(curr_start_window)
-                print(curr_stop_window)
-                break
-                
-                
-            # skips windows that come before the current start window
-            if key < curr_start_window:
-                Win_intro_percent[key] = 0.
-            elif key == curr_start_window:
-                # If the introgressed segment is less than 500, we need to do a special case to find the percentage
-                if tiny_intro:
-                    Win_intro_percent[key] = (curr_stop - curr_start) / 500
-                    # print("Tiny intro (<500bp) of length " + str(curr_stop - curr_start) +
-                    #       " located at " + str(curr_start) + " to " + str(curr_stop) +
-                    #       " in window " + str(curr_start_window) + " covers " + str(Win_intro_percent[key]) + "%")
-                    intro_index += 1
-                else:  # normal case
-                    # calculates the % of the window that is covered by the segment from curr_start to the window's end
-                    Win_intro_percent[key] = (Windows[key][1] - curr_start) / 500
-                    # print("key " + str(key) + " is in current start window")
-                    # print("Checking proper window placement:\n" + "Introgression event " + str(
-                    #     intro_index + 1) + " is placed in " +
-                    #       "Window " + str(curr_start_window) + ":")
-                    # print("[" + str(Windows[curr_start_window][0]) +
-                    #       " ... start: " + str(curr_start) + " ... " +
-                    #       str(Windows[curr_stop_window][1]) + ")")
-            # If we get here, we're in the middle of the introgressed segment
-            elif curr_start_window < key < curr_stop_window:
-                Win_intro_percent[key] = 1.
-            # If we get here, we're in the last window containing the segment. It should be partially introgressed.
-            elif key == curr_stop_window:
-                Win_intro_percent[key] = (curr_stop - Windows[key][0]) / 500
-                # print("key " + str(key) + " is in current stop window")
-                # print("Checking proper window placement:\n" + "Introgression event " + str(
-                #     intro_index + 1) + " is placed in " +
-                #       "Window " + str(curr_stop_window) + ":")
-                # print("[" + str(Windows[curr_stop_window][0]) +
-                #       " ... stop: " + str(curr_stop) + " ... " +
-                #       str(Windows[curr_stop_window][1]) + ")")
+    return Win_intro_percent
 
-                # stop window is initiated, intro_index now goes to the next one
-                intro_index += 1
-                # check to make sure that we record the same number of windows as there are segments
-                if intro_index > intro_sizes.shape[0]:
-                    print("ERROR: Recorded more windows than there are segments")
-                    break
-            else:  # Error check
-                print("----------------------")
-                print("ERROR: bug in key iteration for calculation of introgression percentages")
-                print("intro index is " + str(intro_index))
-                print("key " + str(key))
-                print("curr_start " + str(curr_start))
-                print("curr_stop " + str(curr_stop))
-                print("curr_start_window " + str(curr_start_window))
-                print("curr_stop_window " + str(curr_stop_window))
-                print("----------------------")
-                break
+
+# def calc_window_intro_percent(Binned_windows, true_introgression_positions):
+#     # Creates a dictionary of windows that correspond to the % they are covered by introgressed segments
+#     # INPUT:
+#     # Dictionary variant_Windows = {} where 1 -> [0, 500), 2 -> [500, 100), ..., 40_000 -> [19_999_500, 20_000_000)
+#     #                             The key is the window number from 1 to 40,000 and the value is an array.
+#     #                             The first two elements of this array are the start and stop positions of the window
+#     #                             The following elements of the array are the positions of the variants, if any
+#     # nparray true_introgression_positions = an nparray with the start and stop locations of the introgressed segments
+#     # Output:
+#     # - Wip (window_introgression_percent), a Dictionary of 500bp-bins and their contents that I included to keep track of
+#     # the true introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
+#     # It has the structure (Window # -> Percentage of Introgression as a float between 0 and 1
+
+#     Windows = Binned_windows
+#     true_intro_pos = true_introgression_positions
+#     # Initializing dictionary of Window Introgression Percentages
+#     Win_intro_percent = {}
+
+#     # Extract the columns into numpy arrays and round.
+#     # Sorting makes iterating easier. Not changing any start positions. intro_starts is official starting positions
+#     intro_starts = np.sort(np.round(true_intro_pos[:, 0]))
+#     # print('Starts: {0}'.format(intro_starts))
+#     intro_stops = np.sort(np.round(true_intro_pos[:, 1]))
+#     # print('Stops: {0}'.format(intro_stops))
+#     intro_sizes = np.sort(intro_stops - intro_starts)
+#     # print('Sizes: {0}'.format(intro_sizes))
+
+#     # The index of the true introgression segment in start/stop/sizes
+#     intro_index = 0
+#     for key in Windows:
+#         # if intro_index is the same as the number of true introgressed segments, we can end and assign the rest 0
+#         if intro_index == intro_sizes.shape[0]:
+#             Win_intro_percent[key] = 0.
+#         else:
+#             # Tracking indices
+#             # integer starting and ending positions of the true introgressed segments
+#             curr_start = int(intro_starts[intro_index])
+#             curr_stop = int(intro_stops[intro_index])
+#             # integer offset of curr_start and curr_stop from most recent window
+#             curr_start_mod = int(intro_starts[intro_index] % 500)
+#             curr_stop_mod = int(intro_stops[intro_index] % 500)
+#             # current window that contains the beginning or end of the current segment
+#             curr_start_window = int(((curr_start - curr_start_mod) / 500) + 1)
+#             curr_stop_window = int(((curr_stop - curr_stop_mod) / 500) + 1)            
+#             # boolean that tracks whether the segment falls completely within a window
+#             tiny_intro = curr_stop - curr_start < 500
+            
+            
+#             if key == 2229:
+#                 print(tiny_intro)
+#                 print(key)
+#                 print(curr_start)
+#                 print(curr_stop)
+#                 print(curr_start_mod)
+#                 print(curr_stop_mod)
+#                 print(curr_start_window)
+#                 print(curr_stop_window)
+#                 break
+                
+                
+#             # skips windows that come before the current start window
+#             if key < curr_start_window:
+#                 Win_intro_percent[key] = 0.
+#             elif key == curr_start_window:
+#                 # If the introgressed segment is less than 500, we need to do a special case to find the percentage
+#                 if tiny_intro:
+#                     Win_intro_percent[key] = (curr_stop - curr_start) / 500
+#                     # print("Tiny intro (<500bp) of length " + str(curr_stop - curr_start) +
+#                     #       " located at " + str(curr_start) + " to " + str(curr_stop) +
+#                     #       " in window " + str(curr_start_window) + " covers " + str(Win_intro_percent[key]) + "%")
+#                     intro_index += 1
+#                 else:  # normal case
+#                     # calculates the % of the window that is covered by the segment from curr_start to the window's end
+#                     Win_intro_percent[key] = (Windows[key][1] - curr_start) / 500
+#                     # print("key " + str(key) + " is in current start window")
+#                     # print("Checking proper window placement:\n" + "Introgression event " + str(
+#                     #     intro_index + 1) + " is placed in " +
+#                     #       "Window " + str(curr_start_window) + ":")
+#                     # print("[" + str(Windows[curr_start_window][0]) +
+#                     #       " ... start: " + str(curr_start) + " ... " +
+#                     #       str(Windows[curr_stop_window][1]) + ")")
+#             # If we get here, we're in the middle of the introgressed segment
+#             elif curr_start_window < key < curr_stop_window:
+#                 Win_intro_percent[key] = 1.
+#             # If we get here, we're in the last window containing the segment. It should be partially introgressed.
+#             elif key == curr_stop_window:
+#                 Win_intro_percent[key] = (curr_stop - Windows[key][0]) / 500
+#                 # print("key " + str(key) + " is in current stop window")
+#                 # print("Checking proper window placement:\n" + "Introgression event " + str(
+#                 #     intro_index + 1) + " is placed in " +
+#                 #       "Window " + str(curr_stop_window) + ":")
+#                 # print("[" + str(Windows[curr_stop_window][0]) +
+#                 #       " ... stop: " + str(curr_stop) + " ... " +
+#                 #       str(Windows[curr_stop_window][1]) + ")")
+
+#                 # stop window is initiated, intro_index now goes to the next one
+#                 intro_index += 1
+#                 # check to make sure that we record the same number of windows as there are segments
+#                 if intro_index > intro_sizes.shape[0]:
+#                     print("ERROR: Recorded more windows than there are segments")
+#                     break
+#             else:  # Error check
+#                 print("----------------------")
+#                 print("ERROR: bug in key iteration for calculation of introgression percentages")
+#                 print("intro index is " + str(intro_index))
+#                 print("key " + str(key))
+#                 print("curr_start " + str(curr_start))
+#                 print("curr_stop " + str(curr_stop))
+#                 print("curr_start_window " + str(curr_start_window))
+#                 print("curr_stop_window " + str(curr_stop_window))
+#                 print("----------------------")
+#                 break
 
     # CHECKING WORK
     # tracking first window in 100% run
