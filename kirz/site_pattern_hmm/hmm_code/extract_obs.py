@@ -76,9 +76,23 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
             curr_stop_mod = int(intro_stops[intro_index] % 500)
             # current window that contains the beginning or end of the current segment
             curr_start_window = int(((curr_start - curr_start_mod) / 500) + 1)
-            curr_stop_window = int(((curr_stop - curr_stop_mod) / 500) + 1)
+            curr_stop_window = int(((curr_stop - curr_stop_mod) / 500) + 1)            
             # boolean that tracks whether the segment falls completely within a window
             tiny_intro = curr_stop - curr_start < 500
+            
+            
+            if key == 2229:
+                print(tiny_intro)
+                print(key)
+                print(curr_start)
+                print(curr_stop)
+                print(curr_start_mod)
+                print(curr_stop_mod)
+                print(curr_start_window)
+                print(curr_stop_window)
+                break
+                
+                
             # skips windows that come before the current start window
             if key < curr_start_window:
                 Win_intro_percent[key] = 0.

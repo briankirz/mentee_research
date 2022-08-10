@@ -481,6 +481,6 @@ intro_pos = './sim_data/rep_id_{0}_intro_pos.csv.gz'.format(rep)
 
 
 
-hmm(var_pos, geno_mat, intro_pos, rep, opt_iter)    
+hmm(var_pos, geno_mat, intro_pos, rep, opt_iter_lim)    
 
 # hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

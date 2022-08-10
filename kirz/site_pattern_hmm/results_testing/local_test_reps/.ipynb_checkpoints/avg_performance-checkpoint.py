@@ -136,6 +136,8 @@ def avg_performance(total_reps=1000, threshold=.9):
     # local filepath
     #plt.savefig('./{0}_rep_pr_ratio'.format(total_reps), facecolor='white', dpi=300)
     
+    return avg_fpr, avg_tpr
+    
 
     
 # Read in sys args

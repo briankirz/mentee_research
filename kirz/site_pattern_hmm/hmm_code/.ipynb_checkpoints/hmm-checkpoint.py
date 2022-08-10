@@ -7,8 +7,8 @@ import extract_obs
 import support_code as supp
 import time
 # Commented out when we don't need to use performance visualization
-import visualizer as vis
-import eval_accuracy as eval
+# import visualizer as vis
+# import eval_accuracy as eval
 
 try:
     logaddexp = np.logaddexp
@@ -366,16 +366,14 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
         if supp.logsum(bw_alpha[T, :]) > logP_old:
             lp_A, lp_B, lp_pi = new_A, new_B, new_pi
             logP_new = supp.logsum(bw_alpha[T, :])
-    # Stage 3: Checkpoint that marks time after B-W is complete
-    stage3 = time.time()
 
     # TODO: PERFORMANCES
     # Creates Y rows X 4 columns array to record performances, for each Yth step in Baum-Welch
-    performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
+    # performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
     # For each gamma array in all_gammas (there are a number equal to the runs of baum-welch)
-    for key in All_gammas:
+    # for key in All_gammas:
         # initialize each row of performances to its respective version of the gamma array
-        performances[key] = eval.eval_accuracy(tiw, np.exp(All_gammas[key]), normalized, threshold)
+        # performances[key] = eval.eval_accuracy(tiw, np.exp(All_gammas[key]), normalized, threshold)
 
     # print(performances)
     # print(performances.shape)
@@ -483,6 +481,6 @@ intro_pos = './sim_data/rep_id_{0}_intro_pos.csv.gz'.format(rep)
 
 
 
-hmm(var_pos, geno_mat, intro_pos, rep, opt_iter)    
+hmm(var_pos, geno_mat, intro_pos, rep, opt_iter_lim)    
 
 # hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
