@@ -1,7 +1,6 @@
 import sys
 import gzip
 import numpy as np
-import time
 
 
 # Define a function to split a genotype matrix into non-overlapping windows.
@@ -33,7 +32,6 @@ def genotype_matrix_windows(
     return windows
 
 def calc_window_intro_percent(Binned_windows, true_introgression_positions):
-    
     Windows = Binned_windows
     true_intro_pos = true_introgression_positions
     
@@ -210,39 +208,22 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
     #         else:
     #             if seg_start == 0:
     #                 seg_start = key
-
-    return Win_intro_percent
+    #
+    # return Win_intro_percent
 
 
 # Extracts the observed sequence (binned)
-# Variable positions corresponds to the first index in the genotype matrix
-# Different from the intro positions, which are just the start and stop positions of all introgressed segements
-# Input: var_pos - filepath to the array of all variable positions (filename rep_id_{REP}_var_pos.csv.gz)
-#        pol_gen_mat - filepath to the polarized genotype matrix (filename rep_id_{REP}_polarized_geno_mat.csv.gz)
-# Output: the observed sequence and a dictionary containing information about it
-def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_positions):
-    var_pos = variable_positions
-    pol_geno_mat = polarized_genotype_matrix
-    true_intro_pos = true_introgression_positions
+def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_positions, w_threshold, pattern, dxy):
 
-    # TODO: OLD, HARDCODED INSTRUCTIONS
-    # Load the mutated tree sequence.
-    # rep_id_1_mts = tskit.load('./cs282_sim_data/rep_id_1_mut_tree_seq.ts')
-    # Load the variable positions.
-    # rep_id_1_var_pos = np.loadtxt('../cs282_sim_data/rep_id_1_var_pos.csv.gz', delimiter=',')
+    # load the variant positions
+    var_pos = np.loadtxt(variable_positions, delimiter=',')
     # Load the genotype matrix.
-    # rep_id_1_polarized_geno_mat = np.loadtxt('../cs282_sim_data/rep_id_1_geno_mat.csv.gz', dtype=int,delimiter=',')
+    pol_geno_mat = np.loadtxt(polarized_genotype_matrix, dtype=int, delimiter=',')
     # Load the introgressed region dataframe.
-    # rep_id_1_intro_pos_df = pd.read_csv('../cs282_sim_data/rep_id_1_intro_pos.csv.gz', float_precision='round_trip')
-    # Inspect the tree-sequence summary.
-    # rep_id_1_mts
-
-    # NON-HARDCODED
-    var_pos = np.loadtxt(var_pos, delimiter=',')
-    # Load the genotype matrix.
-    pol_geno_mat = np.loadtxt(pol_geno_mat, dtype=int, delimiter=',')
-    # Load the introgressed region dataframe.
-    true_intro_pos = np.loadtxt(true_intro_pos, delimiter=',')
+    true_intro_pos = np.loadtxt(true_introgression_positions, delimiter=',')
+    # set the window threshold, or the proportion of consistent sites necessary to label C
+    window_threshold = float(w_threshold)
+    # Define what C, a pattern consistent with introgression, would look like.
 
     # Indexed from 1 - 400
     # Windows is of the format key -> value
@@ -253,40 +234,70 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # EXTRACTING OBSERVED SEQUENCE
     # Intialize observed sequence.
     obs_seq = []
-    # Define what C, a pattern consistent with introgression, would look like.
-    c_pattern = np.array([0, 0, 1, 1])
-    # Intialize the start time.
-    start = time.time()
+
+    
+        
+    # TODO: dxy and window_threshold
+    
+
     # Iterate through all the windows by key.
     for key in Windows:
         # Extract the values for the window key.
         window_vals = Windows[key]
-        # Print the tracker
-        # print('there are {0} variants in window {1}'.format(len(window_vals[2:]), key))
-        # If there are variants in that window. Does this mean a window with a single 'C' in it gets left out? NO
-        # Typically Window[key] gives [start, stop]. If there are 1 or more variants then the length is greater than 2
+        
+        # TODO IF TIME: Make a little graph of the distribution of the number of variant sites per window
+        
+        # Typically Windows[key] starts with [start, stop, ...].
+        # If there are 1 or more variants then the length is greater than 2
         if len(window_vals) > 2:
             # Extract variable positions in that window. [2:] excludes start pos and end pos
             variants = np.asarray(window_vals[2:], dtype=np.int32)
             # Subset the genotype matrix for that window.
             window_geno_mat = pol_geno_mat[variants, :]
-            # print(window_geno_mat)
-            # Define what C matrix would look like given an arbitrary number of variants.
-            c_mat = np.tile(c_pattern, (window_geno_mat.shape[0], 1))
-            # If the C matrix is equal to the windowed matrix declare it consistent.
-            if np.array_equal(c_mat, window_geno_mat):
-                # print('C')
+            # Keeping tally of consistent sites so we determine if the window is above threshold
+            c_sites_tally = 0
+            total_sites = len(window_vals)-2
+            
+            c_pattern_a = np.array([0, 0, 1, 1])
+            c_pattern_b = np.array([1, 1, 0, 0])
+            
+            # Checking all of the sites in a single window
+            for site in window_geno_mat:
+                if pattern == "patterna": #0011
+                    # If the C matrix is equal to the windowed matrix declare it consistent.
+                    if np.array_equal(c_pattern_a, site):
+                        c_sites_tally += 1
+                elif pattern == "patternb": #1100
+                    if np.array_equal(c_pattern_b, site):
+                        c_sites_tally += 1
+                elif pattern == "patternc": #0011 or 1100
+                    if np.array_equal(c_pattern_a, site) or np.array_equal(c_pattern_b, site):
+                        c_sites_tally += 1
+                else:
+                    print("ERROR: Invalid Pattern")
+            
+            # Determines the window label
+            c_site_proportion = c_sites_tally / total_sites
+            if c_site_proportion >= window_threshold:
+                print('C')
+                print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('C')
-            # Else declare the window non-consistent.
+                
             else:
-                # print('N')
+                print('N')
+                print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('N')
+                    
+            print(window_geno_mat)
+            print('---------------')
+
         # If there are no variants in the window declare in non-consistent.
         else:
             # print('N')
             obs_seq.append('N')
-    # Intialize the end time.
-    end = time.time()
+
+
+
     # Convert the observation sequence list to an array.
     obs_seq_array = np.asarray(obs_seq)
 
@@ -297,4 +308,4 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     return obs_seq_array, Wip, Windows
 
 
-# extract_O(sys.argv[1], sys.argv[2], sys.argv[3])
+extract_O(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])

@@ -3,18 +3,27 @@ import numpy as np
 import gzip
 import matplotlib.pyplot as plt
 
-def calc_rep_performance(rep_num, Rep_performances, threshold=.9):
-    # set the filepath 
-    rep_filepath = './hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(rep_num+1)
-    # local filepath
-    # rep_filepath = './prufer_results_rep_id_{0}.csv.gz'.format(rep_num+1)
+def calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pattern, dxy):
     
+    if dxy:
+        distance = 'dxy'
+    else:
+        distance = ''
+        
     # download the array from the rep_results filepath
     rep = np.genfromtxt(rep_filepath, delimiter='\t')
     # max number of BW iterations, should be 100
     max_iter = len(rep[0])-4
     fpr_array = np.zeros(max_iter)
     tpr_array = np.zeros(max_iter)
+    
+    
+    # set the OSCAR filepath 
+    rep_filepath = './hmm_results/BW{0}_wthreshold{1]_{2}_{3}_gthreshold{4}_prufer_results_rep_id_{5}.csv.gz'.format(str(max_iter), str(w_threshold), pattern, distance, str(g_threshold), rep_num+1)
+
+
+    
+    
     # Starting in the fourth column (naive gamma) to the end
     for gamma in range(4, max_iter+4):
         # initilaize false positives and false negatives for this gamma
@@ -56,6 +65,7 @@ def calc_rep_performance(rep_num, Rep_performances, threshold=.9):
     R_p[rep_num] = fpr_array, tpr_array
     return R_p
 
+# Creates two tables of performances (all true/false positive rates)
 def table_performances(Rep_performances):
     # extract dimensions
     num_reps = len(Rep_performances) # should be 1000
@@ -69,13 +79,22 @@ def table_performances(Rep_performances):
         all_tprs[int(key)-1] = Rep_performances[key][1]
     return all_fprs, all_tprs
 
-def avg_performance(total_reps=1000, threshold=.9):
+def avg_performance(total_reps=1000, g_threshold=.9, w_threshold=1., pattern, dxy):
+    
+    # guess_threshold = g_threshold
+    # window_threshold = w_threshold
+    # pattern = pattern
+    # dxy = dxy
+    
+    
     # Initialize the performance dictionary
     Rep_performances = {}
     for rep_num in range(total_reps):
         
         # add the performance for rep #rep_num to the dictionary
-        Rep_performances = calc_rep_performance(rep_num, Rep_performances, threshold)
+        Rep_performances = calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pattern, dxy)
+        
+        
     # turn the dictionary of results into two nparrays (fpr, tpr)
     perf_tables = table_performances(Rep_performances)
     fpr = perf_tables[0]
@@ -104,6 +123,14 @@ def avg_performance(total_reps=1000, threshold=.9):
     avg_fpr = np.nanmean(nan_fpr, axis=0)
     avg_tpr = np.nanmean(nan_tpr, axis=0)    
     
+    
+    
+    
+    # HAVE TO INCLUDE INPUTS HERE
+    
+    
+    # TODO: Label output plots with modular input
+    
     # ROC CURVE
     plt.rcParams.update({'font.size': 12})
     fig = plt.figure(figsize=(9, 6), dpi=300)
@@ -111,7 +138,7 @@ def avg_performance(total_reps=1000, threshold=.9):
     plt.plot(avg_fpr, avg_tpr, marker='o', markersize='3', markerfacecolor='r', color='b')
     plt.legend(["1000-Rep Average"], loc="upper left")
     plt.plot([0, .5], [0, .5],'r--')
-    plt.xlim([0, .02])
+    plt.xlim([0, .1])
     plt.ylim([0, .5])
     plt.ylabel('Average True Positive Rate')
     plt.xlabel('Average False Positive Rate')

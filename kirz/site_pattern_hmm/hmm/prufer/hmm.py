@@ -1,14 +1,8 @@
 import sys
 import re
 import gzip
-import shutil
 import numpy as np
 import extract_obs
-import support_code as supp
-import time
-# Commented out when we don't need to use performance visualization
-# import visualizer as vis
-# import eval_accuracy as eval
 
 try:
     logaddexp = np.logaddexp
@@ -23,6 +17,20 @@ except AttributeError:
 
 # Set "log_zero" to negative infinity to help with log sums. It will be taken in as an argument in base cases
 log_zero = np.NINF
+
+def logsum(array):
+    # If the array is of multiple dimensions, it is 'flattened' along one dimension
+    if len(array.shape) > 1:
+        vec = np.reshape(array, (np.product(array.shape),))
+    else:
+        vec = array
+    # the recurrence relation has to include a base case
+    # before the is initialized is initialized the base case is negative infinity,
+    # which has an underlying probability of zero from a logaddexp perspective
+    sum = np.NINF
+    for num in vec:
+        sum = logaddexp(sum, num)
+    return sum
 
 def calc_alpha(A, B, pi, Ob, N, T):
     # Must be T+1 columns in the alpha matrix bc the top one is the state after 0 prefix characters
@@ -146,7 +154,7 @@ def calc_xi(A, B, Ob, N, T, alpha, beta):
         # When the "floor" loop is over, this next step "subtracts the logs" (divides the probabilities) of each cell
         # by the total probability of floor T.
         # Normalize the probability for this time step (divide by P(O|lambda))
-        xi[t, :, :] = lp_traverse - supp.logsum(lp_traverse)
+        xi[t, :, :] = lp_traverse - logsum(lp_traverse)
     return xi
 
 
@@ -162,7 +170,7 @@ def calc_gamma(xi, N, T):
             
             # Sum up the probabilities for state i at this position t by combining all relevant instances
             # where the hidden state could be i at time t
-            gamma[t][i] = supp.logsum(xi[t, i, :])
+            gamma[t][i] = logsum(xi[t, i, :])
     return gamma
 
 
@@ -176,7 +184,7 @@ def update_A(N, xi, gamma):
     for i in range(N):
         # how many transitions out of state i were there
         # summing probabilities because a confidence of 1 counts as 1 transition, 50% confidence counts as half, etc.
-        trans_out[i] = supp.logsum(gamma[:, i])
+        trans_out[i] = logsum(gamma[:, i])
     
     # for every starting state i in xi
     for i in range(N):
@@ -184,7 +192,7 @@ def update_A(N, xi, gamma):
         for j in range(N):
             # A (transition) [i][j] is the sum of all the transitions from i to j
             # This normalized by the previously-calculated sum of the total number of inferred transitions from state i
-            A[i][j] = supp.logsum(xi[:, i, j]) - trans_out[i]
+            A[i][j] = logsum(xi[:, i, j]) - trans_out[i]
             
     return A
 
@@ -206,7 +214,7 @@ def update_B(Ob, N, M, T, xi):
                 # find the sum of all emissions of k from state i when transitioning to each state j and add them
                 ksum[k] = logaddexp(ksum[k], xi[t, i, j])
         # Normalize the sum of all emissions of k from that state i by the sum of all emissions at that position
-        ksum = ksum - supp.logsum(ksum)
+        ksum = ksum - logsum(ksum)
         # Set the new emission matrix to the normalized probability of every type of emission k from state i
         B[i, :] = ksum
     return B
@@ -225,13 +233,7 @@ def update_pi(N, gamma):
 
 
 # Creates a Hidden Markov Model to detect Neanderthal Introgression in modern haplotypes
-# Input:
-#   loci, a list of variant positions measured in kb
-#   ancestries, a list of haplotype lists from 4 ancestries (AFR1, AFR2, TEST, NEAN) with 1s (derived) / 0s (ancestral)
-# Output:
-#   o_results: name of text file
-#   TODO: Explain
-def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
+def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold = 1., pattern = "patterna", dxy = False):
     loci = i_loci
     ancestries = i_ancestries
     true_states = i_true_states
@@ -246,28 +248,35 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
     # Probability of archaic ancestry conditional on all SNPs in the window being of state "C"
     # TEST u = .9
     u = 0.99
-    # Probability cutoff for HMM's "guess" at a true state (HMM must be >=threshold% sure hidden state introgressed)
-    threshold = .9
     # State space: state 0 = 'S' for Species (sapiens), state 1 = 'I' for Introgressed (neandertalensis)
     N = 2
     # Observation space:  observation 0 = 'N' or not consistent, observation 1 = 'C' or consistent with introgression
     M = 2
     # Log-likelihood convergence threshold - used to tell when Baum-Welch has gone far enough
     convergence_threshold = 0.01
-    # Intialize the start time.
-    start = time.time()
+    # NOT NECESSARY TO INCLUDE
+    # Probability cutoff for HMM's "guess" at a true state (HMM must be >=threshold% sure hidden state introgressed)
+    # threshold = .9
 
     # KIRZ's PARAMETERS (not specified by Prufer)
-    # Should results be normalized based on relative probability? Prufer leaves this unclear
-    normalized = False
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
     optimization_limit = opt_limit
     # Remember that since we count the Naive HMM as BW# = 0, this will result in 4 optimization rounds.
     # If you want to run 5 rounds, put 6
+    
+    # minimum percentage of consistent sites necessary to qualify a window for overall consistency
+    window_threshold = float(w_threshold)
+    # setting site patterns (patterna = 0011, patternb = 1100, patternc = 0011 or 1100
+    # DO I NEED TO INITIALIZE PATTERN OR DXY
+    
 
     # PREPROCESSING
     # We begin by extracting the sequence:
-    extraction = extract_obs.extract_O(loci, ancestries, true_states)
+    extraction = extract_obs.extract_O(loci, ancestries, true_states, w_threshold, pattern, dxy)
+    
+    
+    
+    
     # extraction is a tuple made up of an Observation Sequence, which is a string of letters ("NNC..CN")...
     O = extraction[0]
     # O = "NNCCN"  # Dummy Observed Sequence for testing/explanation
@@ -289,8 +298,6 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
     observations = ['N', 'C']
     # Ob is the same as the observation sequence, but with 'N'-> 0 and 'C'-> 1 for quick referencing.
     Ob = [observations.index(label) for label in O]
-    # Stage 1: Checkpoint that marks time after windows binned / sequence generated
-    stage1 = time.time()
 
     # SETTING UP THE HMM
 
@@ -311,24 +318,19 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
     # Initialize log-likelihood trackers and print initial inference
     logP_old = np.NINF
     alpha = calc_alpha(lp_A, lp_B, lp_pi, Ob, N, T)
-    logP_new = supp.logsum(alpha[T, :])
+    logP_new = logsum(alpha[T, :])
 
     # NAIVE HMM matrices (no Baum-Welch)
     beta = calc_beta(lp_A, lp_B, Ob, N, T)
     xi = calc_xi(lp_A, lp_B, Ob, N, T, alpha, beta)
     gamma = calc_gamma(xi, N, T)
 
-    # Stage 2: Checkpoint that marks time Naive HMM matrices have been generated
-    stage2 = time.time()
-
     # BAUM-WELCH OPTIMIZATION
 
     # Initializing a dictionary of gammas: this will allow the comparison of estimated likelihoods over rounds of B/W
     # It has the structure (current_optimization or algorithm step number -> tuple (gamma matrix, performance))
     All_gammas = {}
-
     optimization_count = 0
-
     # Iterate until convergence is reached between results, performance decreases, or the hard cap is met
     while logP_new - logP_old > convergence_threshold and optimization_count < optimization_limit:
 
@@ -363,49 +365,12 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
         logP_old = logP_new
         # compares last two probabilities of the alpha matrix (%chance of seeing the complete prefix)
         # to the old log-probability of seeing the complete prefix given the HMM parameters
-        if supp.logsum(bw_alpha[T, :]) > logP_old:
+        if logsum(bw_alpha[T, :]) > logP_old:
             lp_A, lp_B, lp_pi = new_A, new_B, new_pi
-            logP_new = supp.logsum(bw_alpha[T, :])
+            logP_new = logsum(bw_alpha[T, :])
+            
 
-    # TODO: PERFORMANCES
-    # Creates Y rows X 4 columns array to record performances, for each Yth step in Baum-Welch
-    # performances = np.empty(shape=(len(All_gammas.keys()), 4), dtype=float)
-    # For each gamma array in all_gammas (there are a number equal to the runs of baum-welch)
-    # for key in All_gammas:
-        # initialize each row of performances to its respective version of the gamma array
-        # performances[key] = eval.eval_accuracy(tiw, np.exp(All_gammas[key]), normalized, threshold)
-
-    # print(performances)
-    # print(performances.shape)
-    # # print(performances.shape[0])
-    # # print(performances.shape[1])
-    # # print(performances[0].shape())
-
-    # TODO: VISUALIZE DATA
-    # vis.compare_3(np.exp(gamma), np.exp(bw_gamma), tiw)
-    # vis.display_performance(performances)
-
-    # TODO: MEASURE THE PERFORMANCE OF AN HMM'S GAMMA VS THE REAL THING
-    # TODO: print(tiw)
-    # print(eval.eval_accuracy(tiw, np.exp(bw_gamma), normalized, threshold))
-    # print("False Positive Rate, False Negative Rate,
-    # True Positive Rate (Sensitivity), True Negative Rate (Specificity)")
-
-    # # Commented code here used to export the gamma matrix for the purposes of displaying it
-    # TODO: not showing up for some reason
-    # np.savetxt(
-    #     '/Users/briankirz/Downloads/temp_gamma_matrix.csv.gz',
-    #     np.exp(gamma),
-    #     fmt='%1.3f',
-    #     delimiter=',',
-    # )
-
-    # list = [tp, tn, fp, fn]
-    # np.asarray(list)
-    # make sure this is a numpy array
-    # list = np.array[list]
-
-    # TODO: Create Results Numpyarray
+    # CREATING RESULTS
     # Results is a numpy array that will be filled and exported with all the results of a single rep id
     num_windows = len(Windows)
     # adding extra column to show observation labels
@@ -431,48 +396,53 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=20):
 
 
 # OUTPUTTING RESULTS
-# '/Users/briankirz/Documents/GitHub/mentee_research/kirz/site_pattern_hmm/hmm_code/hmm_function_results.csv.gz'
-    np.savetxt('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(rep_id),
+    np.savetxt('./hmm_results/BW{0}_wthreshold{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimizaton_limit), str(window_threshold), pattern, rep_id),
                results,
                fmt='%1.3f',
                delimiter='\t',
                newline='\n',
                )
-    # Copy the results into a text file
-#    with gzip.open('hmm_function_results.csv.gz', 'rb') as f_in:
-#        with open('hmm_function_results.txt', 'wb') as f_out:
-#            shutil.copyfileobj(f_in, f_out)
-            
+
+    
+    # IF YOU WANT TO USE THIS UPDATE THE FILEPATH        
     # Optional: Change the textfile to reflect 'N' or 'C'
     # instead of 0 or 1 in the Observed label column for better searching
-    with gzip.open('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(str(sys.argv[1])), 'rt') as f_in:
-        with open('./hmm_results/prufer_results_rep_id_{0}_CN.csv.gz'.format(str(sys.argv[1])), 'w') as f_out:
-            lines = f_in.readlines()
-            for line in lines:
-                split_line = re.split('\t', line)
-                # initialize new line with first element of original 
-                newline = split_line[0]
-                # if the current column index is the same as the observation
-                # we exclude the first element because it doesn't fit the \t recurrence
-                for column in range (1, len(split_line)):
-                    if column == observation_col_index:
-                        # replace the element with C
-                        if split_line[observation_col_index] == '1.000':
-                            newline += ('\tC')
-                        # replace the element with N
-                        elif split_line[observation_col_index] == '0.000':
-                            newline += ('\tN')
-                        else:
-                            print("ERROR: value in observation column not 1 or 0")
-                    # copy all other columns normally
-                    else:
-                        newline += ('\t'+split_line[column])
-                # copy complete new line in new file
-                f_out.write(newline)
+    # with gzip.open('./hmm_results/prufer_results_rep_id_{0}.csv.gz'.format(str(sys.argv[1])), 'rt') as f_in:
+    #     with open('./hmm_results/prufer_results_rep_id_{0}_CN.csv.gz'.format(str(sys.argv[1])), 'w') as f_out:
+    #         lines = f_in.readlines()
+    #         for line in lines:
+    #             split_line = re.split('\t', line)
+    #             # initialize new line with first element of original 
+    #             newline = split_line[0]
+    #             # if the current column index is the same as the observation
+    #             # we exclude the first element because it doesn't fit the \t recurrence
+    #             for column in range (1, len(split_line)):
+    #                 if column == observation_col_index:
+    #                     # replace the element with C
+    #                     if split_line[observation_col_index] == '1.000':
+    #                         newline += ('\tC')
+    #                     # replace the element with N
+    #                     elif split_line[observation_col_index] == '0.000':
+    #                         newline += ('\tN')
+    #                     else:
+    #                         print("ERROR: value in observation column not 1 or 0")
+    #                 # copy all other columns normally
+    #                 else:
+    #                     newline += ('\t'+split_line[column])
+    #             # copy complete new line in new file
+    #             f_out.write(newline)
+
+                
+                
+                
+# TREATING INPUT
 
 # Read in sys args.
-rep = str(sys.argv[1])
-opt_iter_lim = int(sys.argv[2])
+rep = str(sys.argv[1]) # ${REP}
+opt_iter_lim = int(sys.argv[2]) # 100
+w_threshold = float(sys.argv[3]) # 1.
+patterns = str(sys.argv[4]) # patterna
+dxy = str(sys.argv[5]) # False
 
 # Load the simulated data.
 var_pos = './sim_data/rep_id_{0}_var_pos.csv.gz'.format(rep)
@@ -481,6 +451,6 @@ intro_pos = './sim_data/rep_id_{0}_intro_pos.csv.gz'.format(rep)
 
 
 
-hmm(var_pos, geno_mat, intro_pos, rep, opt_iter_lim)    
+hmm(var_pos, geno_mat, intro_pos, rep, opt_iter_lim, w_threshold, patterns, dxy)    
 
 # hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
