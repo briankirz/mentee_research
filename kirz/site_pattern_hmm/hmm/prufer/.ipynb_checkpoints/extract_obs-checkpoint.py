@@ -180,16 +180,16 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
 
             # if it's not above threshold, but dxy is active and EUR are closer than AFR still label C
             if c_by_threshold or c_by_dxy:
-                print('C')
-                print('C site proportion: ' + str(c_site_proportion*100) + '%')
+                # print('C')
+                # print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('C')
             else:
                 # print('N')
                 # print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('N')
                     
-            print(window_geno_mat)
-            print('---------------')
+            # print(window_geno_mat)
+            # print('---------------')
 
         # If there are no variants in the window declare in non-consistent.
         else:
@@ -208,4 +208,4 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     return obs_seq_array, Wip, Windows
 
 
-extract_O(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+# extract_O(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])

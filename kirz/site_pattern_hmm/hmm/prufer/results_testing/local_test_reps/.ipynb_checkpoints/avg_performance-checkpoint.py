@@ -3,25 +3,31 @@ import numpy as np
 import gzip
 import matplotlib.pyplot as plt
 
-def calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pattern, dxy):
+def calc_rep_performance(rep_num, Rep_performances, bw_limit, g_threshold, w_threshold, pattern, dxy):
     
-    if dxy:
-        distance = 'dxy'
+    # print(dxy)
+    
+    if dxy == 'True':
+        distance = 'dxy_'
     else:
         distance = ''
         
-    # download the array from the rep_results filepath
-    rep = np.genfromtxt(rep_filepath, delimiter='\t')
+    # print(distance)
+
+        
+    #VARIABLE ASSIGNMENT KNOT THAT I HAVE TO UNTANGLE HERE
+        
     # max number of BW iterations, should be 100
-    max_iter = len(rep[0])-4
+    # max_iter = len(rep[0])-4
+    max_iter = bw_limit
     fpr_array = np.zeros(max_iter)
     tpr_array = np.zeros(max_iter)
     
-    
     # set the OSCAR filepath 
-    rep_filepath = './hmm_results/BW{0}_wthreshold{1]_{2}_{3}_gthreshold{4}_prufer_results_rep_id_{5}.csv.gz'.format(str(max_iter), str(w_threshold), pattern, distance, str(g_threshold), rep_num+1)
+    rep_filepath = './hmm_results/BW{0}_wt{1}_{2}_{3}prufer_results_rep_id_{4}.csv.gz'.format(str(max_iter), str(w_threshold), pattern, distance, rep_num+1)
 
-
+    # download the array from the rep_results filepath
+    rep = np.genfromtxt(rep_filepath, delimiter='\t')
     
     
     # Starting in the fourth column (naive gamma) to the end
@@ -39,7 +45,7 @@ def calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pa
             gamma_val = rep[w][gamma]
             if 0 < true_val <= 1.:
                 # true positive
-                if gamma_val >= threshold:
+                if gamma_val >= g_threshold:
                     tp += 1
                 # false negative
                 else:
@@ -47,7 +53,7 @@ def calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pa
             # Underlying window is not 100% introgressed
             elif true_val == 0:
                 # false positive
-                if gamma_val >= threshold:
+                if gamma_val >= g_threshold:
                     fp += 1
                 # true negative
                 else:
@@ -79,20 +85,20 @@ def table_performances(Rep_performances):
         all_tprs[int(key)-1] = Rep_performances[key][1]
     return all_fprs, all_tprs
 
-def avg_performance(total_reps=1000, g_threshold=.9, w_threshold=1., pattern, dxy):
+def avg_performance(total_reps, bw_limit, g_threshold=.9, w_threshold=1., pattern='patterna', dxy='False'):
     
     # guess_threshold = g_threshold
     # window_threshold = w_threshold
     # pattern = pattern
     # dxy = dxy
-    
+    # print(dxy)
     
     # Initialize the performance dictionary
     Rep_performances = {}
     for rep_num in range(total_reps):
         
         # add the performance for rep #rep_num to the dictionary
-        Rep_performances = calc_rep_performance(rep_num, Rep_performances, g_threshold, w_threshold, pattern, dxy)
+        Rep_performances = calc_rep_performance(rep_num, Rep_performances, bw_limit, g_threshold, w_threshold, pattern, dxy)
         
         
     # turn the dictionary of results into two nparrays (fpr, tpr)
@@ -136,13 +142,20 @@ def avg_performance(total_reps=1000, g_threshold=.9, w_threshold=1., pattern, dx
     fig = plt.figure(figsize=(9, 6), dpi=300)
     plt.title('Receiver Operating Characteristic')
     plt.plot(avg_fpr, avg_tpr, marker='o', markersize='3', markerfacecolor='r', color='b')
-    plt.legend(["1000-Rep Average"], loc="upper left")
+    plt.legend(["{0}-Rep Average".format(total_reps)], loc="upper left")
     plt.plot([0, .5], [0, .5],'r--')
     plt.xlim([0, .1])
     plt.ylim([0, .5])
     plt.ylabel('Average True Positive Rate')
     plt.xlabel('Average False Positive Rate')
-    plt.savefig('./hmm_results/{0}_rep_ROC'.format(total_reps), facecolor='white', dpi=300)
+    if dxy == 'False':
+        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
+    elif dxy == 'True':
+        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_dxy_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
+    else:
+        print('ERROR: dxy is not true or false')
+    
+    
     # local filepath
     # plt.savefig('./{0}_rep_ROC'.format(total_reps), facecolor='white', dpi=300)
     
@@ -152,14 +165,22 @@ def avg_performance(total_reps=1000, g_threshold=.9, w_threshold=1., pattern, dx
     fig = plt.figure(figsize=(9, 6), dpi=300)
     plt.title('Average TPR/FPR Ratio as Baum-Welch Iterates')
     plt.plot(np.arange(max_BW), list(avg_tpr/avg_fpr), marker='o', markersize='3', markerfacecolor='r', color='b')
-    plt.legend(["1000-Rep Average"], loc="upper left")
+    plt.legend(["{0}-Rep Average".format(total_reps)], loc="upper left")
     plt.plot([0, .5], [0, .5],'r--')
     plt.xlim([0, max_BW])
     plt.ylim([0, 200])
     plt.ylabel('True Positive Rate / False Positive Rate')
     plt.xlabel('Baum-Welch Iteration Number')
     plt.show()    
-    plt.savefig('./hmm_results/{0}_rep_pr_ratio'.format(total_reps), facecolor='white', dpi=300)
+    
+    if dxy == 'False':
+        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_{3}_rep_pr_ratio.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
+    elif dxy == 'True':
+        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_dxy_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
+    else:
+        print('ERROR: dxy is not true or false')
+    
+    
     # local filepath
     #plt.savefig('./{0}_rep_pr_ratio'.format(total_reps), facecolor='white', dpi=300)
     
@@ -169,9 +190,13 @@ def avg_performance(total_reps=1000, g_threshold=.9, w_threshold=1., pattern, dx
     
 # Read in sys args
 total_reps = int(sys.argv[1])
-threshold = float(sys.argv[2])
+bw_limit = int(sys.argv[2])
+g_threshold = float(sys.argv[3])
+w_threshold = float(sys.argv[4])
+pattern = sys.argv[5]
+dxy = sys.argv[6]
 
-avg_performance(total_reps, threshold)
+avg_performance(total_reps, bw_limit, g_threshold, w_threshold, pattern, dxy)
 
 
 

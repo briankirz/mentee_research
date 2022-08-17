@@ -260,7 +260,7 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
 
     # KIRZ's PARAMETERS (not specified by Prufer)
     # Primary Baum-Welch adjustment parameter, to make sure it doesn't go on too long
-    optimization_limit = opt_limit
+    optimization_limit = int(opt_limit)
     # Remember that since we count the Naive HMM as BW# = 0, this will result in 4 optimization rounds.
     # If you want to run 5 rounds, put 6
     
@@ -343,7 +343,7 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
         # recording optimization count / performance progress
         if optimization_count >= 1:
             print("Optimization count " + str(optimization_count))
-            print("Improvement of " + str(np.exp(logP_new - logP_old)) + " from last model")
+            print("Improvement of " + str(logP_new - logP_old) + " from last model")
             All_gammas[optimization_count] = bw_gamma
         # we set it to just run once
         elif optimization_count == 0:
@@ -389,14 +389,14 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
         # indicating window labels (1 = C, 0 = N)
         results[key-1][3] = Ob[key-1]
     # iterating through all baum-welch gamma matrices
-    for g in range(0, optimization_limit):
+    for g in range(0, len(All_gammas)):
         # for each particular window position in gamma, what is the percentage change of introgression?
         for w in range(0, num_windows):
             results[w][g + 4] = np.exp(All_gammas[g][w][1])
 
 
 # OUTPUTTING RESULTS
-    np.savetxt('./hmm_results/BW{0}_wthreshold{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimizaton_limit), str(window_threshold), pattern, rep_id),
+    np.savetxt('./hmm_results/BW{0}_wthreshold{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
                results,
                fmt='%1.3f',
                delimiter='\t',
