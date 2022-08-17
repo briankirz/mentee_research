@@ -73,145 +73,6 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
             
     return Win_intro_percent
 
-
-# def calc_window_intro_percent(Binned_windows, true_introgression_positions):
-#     # Creates a dictionary of windows that correspond to the % they are covered by introgressed segments
-#     # INPUT:
-#     # Dictionary variant_Windows = {} where 1 -> [0, 500), 2 -> [500, 100), ..., 40_000 -> [19_999_500, 20_000_000)
-#     #                             The key is the window number from 1 to 40,000 and the value is an array.
-#     #                             The first two elements of this array are the start and stop positions of the window
-#     #                             The following elements of the array are the positions of the variants, if any
-#     # nparray true_introgression_positions = an nparray with the start and stop locations of the introgressed segments
-#     # Output:
-#     # - Wip (window_introgression_percent), a Dictionary of 500bp-bins and their contents that I included to keep track of
-#     # the true introgression state windows, and how "covered" each is by introgressed segments. This is crucial for evaluation.
-#     # It has the structure (Window # -> Percentage of Introgression as a float between 0 and 1
-
-#     Windows = Binned_windows
-#     true_intro_pos = true_introgression_positions
-#     # Initializing dictionary of Window Introgression Percentages
-#     Win_intro_percent = {}
-
-#     # Extract the columns into numpy arrays and round.
-#     # Sorting makes iterating easier. Not changing any start positions. intro_starts is official starting positions
-#     intro_starts = np.sort(np.round(true_intro_pos[:, 0]))
-#     # print('Starts: {0}'.format(intro_starts))
-#     intro_stops = np.sort(np.round(true_intro_pos[:, 1]))
-#     # print('Stops: {0}'.format(intro_stops))
-#     intro_sizes = np.sort(intro_stops - intro_starts)
-#     # print('Sizes: {0}'.format(intro_sizes))
-
-#     # The index of the true introgression segment in start/stop/sizes
-#     intro_index = 0
-#     for key in Windows:
-#         # if intro_index is the same as the number of true introgressed segments, we can end and assign the rest 0
-#         if intro_index == intro_sizes.shape[0]:
-#             Win_intro_percent[key] = 0.
-#         else:
-#             # Tracking indices
-#             # integer starting and ending positions of the true introgressed segments
-#             curr_start = int(intro_starts[intro_index])
-#             curr_stop = int(intro_stops[intro_index])
-#             # integer offset of curr_start and curr_stop from most recent window
-#             curr_start_mod = int(intro_starts[intro_index] % 500)
-#             curr_stop_mod = int(intro_stops[intro_index] % 500)
-#             # current window that contains the beginning or end of the current segment
-#             curr_start_window = int(((curr_start - curr_start_mod) / 500) + 1)
-#             curr_stop_window = int(((curr_stop - curr_stop_mod) / 500) + 1)            
-#             # boolean that tracks whether the segment falls completely within a window
-#             tiny_intro = curr_stop - curr_start < 500
-            
-            
-#             if key == 2229:
-#                 print(tiny_intro)
-#                 print(key)
-#                 print(curr_start)
-#                 print(curr_stop)
-#                 print(curr_start_mod)
-#                 print(curr_stop_mod)
-#                 print(curr_start_window)
-#                 print(curr_stop_window)
-#                 break
-                
-                
-#             # skips windows that come before the current start window
-#             if key < curr_start_window:
-#                 Win_intro_percent[key] = 0.
-#             elif key == curr_start_window:
-#                 # If the introgressed segment is less than 500, we need to do a special case to find the percentage
-#                 if tiny_intro:
-#                     Win_intro_percent[key] = (curr_stop - curr_start) / 500
-#                     # print("Tiny intro (<500bp) of length " + str(curr_stop - curr_start) +
-#                     #       " located at " + str(curr_start) + " to " + str(curr_stop) +
-#                     #       " in window " + str(curr_start_window) + " covers " + str(Win_intro_percent[key]) + "%")
-#                     intro_index += 1
-#                 else:  # normal case
-#                     # calculates the % of the window that is covered by the segment from curr_start to the window's end
-#                     Win_intro_percent[key] = (Windows[key][1] - curr_start) / 500
-#                     # print("key " + str(key) + " is in current start window")
-#                     # print("Checking proper window placement:\n" + "Introgression event " + str(
-#                     #     intro_index + 1) + " is placed in " +
-#                     #       "Window " + str(curr_start_window) + ":")
-#                     # print("[" + str(Windows[curr_start_window][0]) +
-#                     #       " ... start: " + str(curr_start) + " ... " +
-#                     #       str(Windows[curr_stop_window][1]) + ")")
-#             # If we get here, we're in the middle of the introgressed segment
-#             elif curr_start_window < key < curr_stop_window:
-#                 Win_intro_percent[key] = 1.
-#             # If we get here, we're in the last window containing the segment. It should be partially introgressed.
-#             elif key == curr_stop_window:
-#                 Win_intro_percent[key] = (curr_stop - Windows[key][0]) / 500
-#                 # print("key " + str(key) + " is in current stop window")
-#                 # print("Checking proper window placement:\n" + "Introgression event " + str(
-#                 #     intro_index + 1) + " is placed in " +
-#                 #       "Window " + str(curr_stop_window) + ":")
-#                 # print("[" + str(Windows[curr_stop_window][0]) +
-#                 #       " ... stop: " + str(curr_stop) + " ... " +
-#                 #       str(Windows[curr_stop_window][1]) + ")")
-
-#                 # stop window is initiated, intro_index now goes to the next one
-#                 intro_index += 1
-#                 # check to make sure that we record the same number of windows as there are segments
-#                 if intro_index > intro_sizes.shape[0]:
-#                     print("ERROR: Recorded more windows than there are segments")
-#                     break
-#             else:  # Error check
-#                 print("----------------------")
-#                 print("ERROR: bug in key iteration for calculation of introgression percentages")
-#                 print("intro index is " + str(intro_index))
-#                 print("key " + str(key))
-#                 print("curr_start " + str(curr_start))
-#                 print("curr_stop " + str(curr_stop))
-#                 print("curr_start_window " + str(curr_start_window))
-#                 print("curr_stop_window " + str(curr_stop_window))
-#                 print("----------------------")
-#                 break
-
-    # CHECKING WORK
-    # tracking first window in 100% run
-    # seg_start = 0
-    # for key in Win_intro_percent:
-    #     # looking for the beginnings of segments
-    #     if Win_intro_percent[key] != 0:
-    #         # not completely covered
-    #         if Win_intro_percent[key] != 1:
-    #             # initialize segment tracker
-    #             # if we've already initialized a segment
-    #             if seg_start != 0:
-    #                 print("Windows {0} to {1} are 100% introgressed".format(seg_start, key - 1))
-    #                 print("Window {0} is {1}% introgressed".format(key, Win_intro_percent[key] * 100))
-    #                 print("-------------------------------")
-    #                 seg_start = 0
-    #             else:
-    #                 print("Window {0} is {1}% introgressed".format(key, Win_intro_percent[key] * 100))
-    #         # if we're in a segment and the percentage is 1
-    #         else:
-    #             if seg_start == 0:
-    #                 seg_start = key
-    #
-    # return Win_intro_percent
-
-
 # Extracts the observed sequence (binned)
 def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_positions, w_threshold, pattern, dxy):
 
@@ -237,7 +98,7 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
 
     
         
-    # TODO: dxy and window_threshold
+    # TODO: dxy
     
 
     # Iterate through all the windows by key.
@@ -245,22 +106,59 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
         # Extract the values for the window key.
         window_vals = Windows[key]
         
-        # TODO IF TIME: Make a little graph of the distribution of the number of variant sites per window
         
         # Typically Windows[key] starts with [start, stop, ...].
         # If there are 1 or more variants then the length is greater than 2
         if len(window_vals) > 2:
+
             # Extract variable positions in that window. [2:] excludes start pos and end pos
             variants = np.asarray(window_vals[2:], dtype=np.int32)
             # Subset the genotype matrix for that window.
             window_geno_mat = pol_geno_mat[variants, :]
+            
+            # DXY CALCULATION
+            # if we're including a lower Dxy distance as a potential source of window consistency
+            # all we're doing here is determining a boolean - whether the window should be considered consistent
+            c_by_dxy = False
+            if dxy:
+                num_pops = len(window_geno_mat[0])
+                num_vars = len(window_geno_mat)
+                # This is the index of the column population we're testing/referencing: In this case, EUR/NEAN
+                # AFR1 | AFR2 | EUR | NEAN
+                test_pop_index = 2
+                ref_pop_index = 3
+                # create a matrix of neanderthal alleles at each variant site (the last column)
+                nean = window_geno_mat[:, ref_pop_index]
+                
+                # initialize the resulting matrix for all non-reference populations observed
+                dxy_distances = np.zeros(num_pops-1)
+                # the last column is the archaic pop, so we leave it zero
+                for col in range(num_pops-1):
+                    # create 1-D matrix. elem is allele at each respective variant site for that pop
+                    # [[1 1 0 0]
+                    #  [0 0 1 1]
+                    #  [1 1 1 0]
+                    #  [1 1 1 0]]
+                    # For example, for col 0, or the first population, which is AFR1, would be the first column
+                    # pop = [1 0 1 1]
+                    pop = window_geno_mat[:, col]
+                    dxy_distances[col] = np.sum((np.multiply(pop, 1-nean) + np.multiply(nean, 1-pop)) / num_vars)
+                # dxy_distances now should look something like this:
+                # [AFR1dxy, AFR2dxy, EURdxy]
+                # If the minimum value is the test_pop_index (test EUR is closest), then c_by_dxy is True
+                if np.argmin(dxy_distances) == test_pop_index:
+                    c_by_dxy = True
+                    
+            # TRADITIONAL WINDOW_THRESHOLD
             # Keeping tally of consistent sites so we determine if the window is above threshold
+            # if c_by_dxy is true, we don't need to caclulate this and can save time (we know it'll be closer)?
+            # if not c_by_dxy:
             c_sites_tally = 0
             total_sites = len(window_vals)-2
-            
+
             c_pattern_a = np.array([0, 0, 1, 1])
             c_pattern_b = np.array([1, 1, 0, 0])
-            
+
             # Checking all of the sites in a single window
             for site in window_geno_mat:
                 if pattern == "patterna": #0011
@@ -275,17 +173,19 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
                         c_sites_tally += 1
                 else:
                     print("ERROR: Invalid Pattern")
-            
-            # Determines the window label
             c_site_proportion = c_sites_tally / total_sites
-            if c_site_proportion >= window_threshold:
+            c_by_threshold = (c_site_proportion >= window_threshold)
+                    
+            # DETERMINE WINDOW LABEL
+
+            # if it's not above threshold, but dxy is active and EUR are closer than AFR still label C
+            if c_by_threshold or c_by_dxy:
                 print('C')
                 print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('C')
-                
             else:
-                print('N')
-                print('C site proportion: ' + str(c_site_proportion*100) + '%')
+                # print('N')
+                # print('C site proportion: ' + str(c_site_proportion*100) + '%')
                 obs_seq.append('N')
                     
             print(window_geno_mat)
