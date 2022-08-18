@@ -233,7 +233,7 @@ def update_pi(N, gamma):
 
 
 # Creates a Hidden Markov Model to detect Neanderthal Introgression in modern haplotypes
-def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold = 1., pattern = "patterna", dxy = False):
+def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold = 1., pattern = "patterna", dxy = "False"):
     loci = i_loci
     ancestries = i_ancestries
     true_states = i_true_states
@@ -396,12 +396,22 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
 
 
 # OUTPUTTING RESULTS
-    np.savetxt('./hmm_results/BW{0}_wthreshold{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
+    if dxy == "False":
+        np.savetxt('./hmm_results/BW{0}_wt{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
                results,
                fmt='%1.3f',
                delimiter='\t',
                newline='\n',
                )
+    elif dxy == "True":
+                np.savetxt('./hmm_results/BW{0}_wt{1}_{2}_dxy_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
+               results,
+               fmt='%1.3f',
+               delimiter='\t',
+               newline='\n',
+               )
+    else:
+        print("ERROR: Invalid dxy")
 
     
     # IF YOU WANT TO USE THIS UPDATE THE FILEPATH        
