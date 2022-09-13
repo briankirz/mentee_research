@@ -1,37 +1,22 @@
 import sys
 import numpy as np
 import gzip
-import matplotlib.pyplot as plt
 
 def calc_rep_performance(rep_num, Rep_performances, bw_limit, g_threshold, w_threshold, pattern, dxy):
-    
-    # print(dxy)
-    
-    if dxy == 'True':
-        distance = 'dxy_'
-    else:
-        distance = ''
-        
-    # print(distance)
 
-        
-    #VARIABLE ASSIGNMENT KNOT THAT I HAVE TO UNTANGLE HERE
-        
     # max number of BW iterations, should be 100
-    # max_iter = len(rep[0])-4
-    max_iter = bw_limit
-    fpr_array = np.zeros(max_iter)
-    tpr_array = np.zeros(max_iter)
+    fpr_array = np.zeros(bw_limit)
+    tpr_array = np.zeros(bw_limit)
     
-    # set the OSCAR filepath 
-    rep_filepath = './hmm_results/BW{0}_wt{1}_{2}_{3}prufer_results_rep_id_{4}.csv.gz'.format(str(max_iter), str(w_threshold), pattern, distance, rep_num+1)
+    # set the results filepath 
+    rep_filepath = './hmm_results/results_BW{0}_wt{1}_{2}_{3}_prufer_rep_id_{4}.csv.gz'.format(str(bw_limit), str(w_threshold), pattern, dxy, rep_num+1)
 
     # download the array from the rep_results filepath
     rep = np.genfromtxt(rep_filepath, delimiter='\t')
     
     
     # Starting in the fourth column (naive gamma) to the end
-    for gamma in range(4, max_iter+4):
+    for gamma in range(4, bw_limit+4):
         # initilaize false positives and false negatives for this gamma
         fp = 0  # number of false positives
         fn = 0  # number of false negatives
@@ -85,18 +70,11 @@ def table_performances(Rep_performances):
         all_tprs[int(key)-1] = Rep_performances[key][1]
     return all_fprs, all_tprs
 
-def avg_performance(total_reps, bw_limit, g_threshold=.9, w_threshold=1., pattern='patterna', dxy='False'):
-    
-    # guess_threshold = g_threshold
-    # window_threshold = w_threshold
-    # pattern = pattern
-    # dxy = dxy
-    # print(dxy)
-    
+def avg_performance(total_reps, bw_limit, g_threshold=.9, w_threshold=1., pattern='patterna', dxy='nodxy'):
+
     # Initialize the performance dictionary
     Rep_performances = {}
     for rep_num in range(total_reps):
-        
         # add the performance for rep #rep_num to the dictionary
         Rep_performances = calc_rep_performance(rep_num, Rep_performances, bw_limit, g_threshold, w_threshold, pattern, dxy)
         
@@ -129,60 +107,8 @@ def avg_performance(total_reps, bw_limit, g_threshold=.9, w_threshold=1., patter
     avg_fpr = np.nanmean(nan_fpr, axis=0)
     avg_tpr = np.nanmean(nan_tpr, axis=0)    
     
-    
-    
-    
-    # HAVE TO INCLUDE INPUTS HERE
-    
-    
-    # TODO: Label output plots with modular input
-    
-    # ROC CURVE
-    plt.rcParams.update({'font.size': 12})
-    fig = plt.figure(figsize=(9, 6), dpi=300)
-    plt.title('Receiver Operating Characteristic')
-    plt.plot(avg_fpr, avg_tpr, marker='o', markersize='3', markerfacecolor='r', color='b')
-    plt.legend(["{0}-Rep Average".format(total_reps)], loc="upper left")
-    plt.plot([0, .5], [0, .5],'r--')
-    plt.xlim([0, .1])
-    plt.ylim([0, .5])
-    plt.ylabel('Average True Positive Rate')
-    plt.xlabel('Average False Positive Rate')
-    if dxy == 'False':
-        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
-    elif dxy == 'True':
-        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_dxy_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
-    else:
-        print('ERROR: dxy is not true or false')
-    
-    
-    # local filepath
-    # plt.savefig('./{0}_rep_ROC'.format(total_reps), facecolor='white', dpi=300)
-    
-    
-    # TPR/FPR To BW Iteration Ratio
-    plt.rcParams.update({'font.size': 12})
-    fig = plt.figure(figsize=(9, 6), dpi=300)
-    plt.title('Average TPR/FPR Ratio as Baum-Welch Iterates')
-    plt.plot(np.arange(max_BW), list(avg_tpr/avg_fpr), marker='o', markersize='3', markerfacecolor='r', color='b')
-    plt.legend(["{0}-Rep Average".format(total_reps)], loc="upper left")
-    plt.plot([0, .5], [0, .5],'r--')
-    plt.xlim([0, max_BW])
-    plt.ylim([0, 200])
-    plt.ylabel('True Positive Rate / False Positive Rate')
-    plt.xlabel('Baum-Welch Iteration Number')
-    plt.show()    
-    
-    if dxy == 'False':
-        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_{3}_rep_pr_ratio.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
-    elif dxy == 'True':
-        plt.savefig('./hmm_results/BW{0}_wt{1}_{2}_dxy_{3}_rep_ROC.png'.format(str(max_BW), str(w_threshold), pattern, str(total_reps)), facecolor='white', dpi=300)
-    else:
-        print('ERROR: dxy is not true or false')
-    
-    
-    # local filepath
-    #plt.savefig('./{0}_rep_pr_ratio'.format(total_reps), facecolor='white', dpi=300)
+    np.savetxt('./performance_results/avg_fpr_gt{0}_BW{1}_wt{2}_{3}_{4}_prufer_{5}_reps.csv.gz'.format(str(g_threshold), str(bw_limit), str(w_threshold), pattern, dxy, str(total_reps)), avg_fpr, fmt='%1.3f', delimiter='\t', newline='\n')
+    np.savetxt('./performance_results/avg_tpr_gt{0}_BW{1}_wt{2}_{3}_{4}_prufer_{5}_reps.csv.gz'.format(str(g_threshold), str(bw_limit), str(w_threshold), pattern, dxy, str(total_reps)), avg_tpr, fmt='%1.3f', delimiter='\t', newline='\n')
     
     return avg_fpr, avg_tpr
     
@@ -193,8 +119,8 @@ total_reps = int(sys.argv[1])
 bw_limit = int(sys.argv[2])
 g_threshold = float(sys.argv[3])
 w_threshold = float(sys.argv[4])
-pattern = sys.argv[5]
-dxy = sys.argv[6]
+pattern = str(sys.argv[5])
+dxy = str(sys.argv[6])
 
 avg_performance(total_reps, bw_limit, g_threshold, w_threshold, pattern, dxy)
 

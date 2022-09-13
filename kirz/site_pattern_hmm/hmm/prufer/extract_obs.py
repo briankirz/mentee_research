@@ -75,6 +75,7 @@ def calc_window_intro_percent(Binned_windows, true_introgression_positions):
 
 # Extracts the observed sequence (binned)
 def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_positions, w_threshold, pattern, dxy):
+    
 
     # load the variant positions
     var_pos = np.loadtxt(variable_positions, delimiter=',')
@@ -95,11 +96,6 @@ def extract_O(variable_positions, polarized_genotype_matrix, true_introgression_
     # EXTRACTING OBSERVED SEQUENCE
     # Intialize observed sequence.
     obs_seq = []
-
-    
-        
-    # TODO: dxy
-    
 
     # Iterate through all the windows by key.
     for key in Windows:

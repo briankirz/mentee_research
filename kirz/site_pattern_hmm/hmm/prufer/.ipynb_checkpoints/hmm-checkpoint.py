@@ -233,7 +233,7 @@ def update_pi(N, gamma):
 
 
 # Creates a Hidden Markov Model to detect Neanderthal Introgression in modern haplotypes
-def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold = 1., pattern = "patterna", dxy = "False"):
+def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold = 1., pattern = "patterna", dxy = "nodxy"):
     loci = i_loci
     ancestries = i_ancestries
     true_states = i_true_states
@@ -267,15 +267,17 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
     # minimum percentage of consistent sites necessary to qualify a window for overall consistency
     window_threshold = float(w_threshold)
     # setting site patterns (patterna = 0011, patternb = 1100, patternc = 0011 or 1100
-    # DO I NEED TO INITIALIZE PATTERN OR DXY
-    
+    if dxy == "dxy":
+        booldxy = True
+    elif dxy == "nodxy":
+        booldxy = False
+    else:
+        booldxy = False
+        print("ERROR: invalid dxy (use 'dxy' or 'nodxy')")
 
     # PREPROCESSING
     # We begin by extracting the sequence:
-    extraction = extract_obs.extract_O(loci, ancestries, true_states, w_threshold, pattern, dxy)
-    
-    
-    
+    extraction = extract_obs.extract_O(loci, ancestries, true_states, w_threshold, pattern, booldxy)
     
     # extraction is a tuple made up of an Observation Sequence, which is a string of letters ("NNC..CN")...
     O = extraction[0]
@@ -396,23 +398,12 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
 
 
 # OUTPUTTING RESULTS
-    if dxy == "False":
-        np.savetxt('./hmm_results/BW{0}_wt{1}_{2}_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
+    np.savetxt('./hmm_results/results_BW{0}_wt{1}_{2}_{3}_prufer_rep_id_{4}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, dxy, rep_id),
                results,
                fmt='%1.3f',
                delimiter='\t',
                newline='\n',
                )
-    elif dxy == "True":
-                np.savetxt('./hmm_results/BW{0}_wt{1}_{2}_dxy_prufer_results_rep_id_{3}.csv.gz'.format(str(optimization_limit), str(window_threshold), pattern, rep_id),
-               results,
-               fmt='%1.3f',
-               delimiter='\t',
-               newline='\n',
-               )
-    else:
-        print("ERROR: Invalid dxy")
-
     
     # IF YOU WANT TO USE THIS UPDATE THE FILEPATH        
     # Optional: Change the textfile to reflect 'N' or 'C'
@@ -449,10 +440,10 @@ def hmm(i_loci, i_ancestries, i_true_states, rep_id, opt_limit=100, w_threshold 
 
 # Read in sys args.
 rep = str(sys.argv[1]) # ${REP}
-opt_iter_lim = int(sys.argv[2]) # 100
+bw_limit = int(sys.argv[2]) # 100
 w_threshold = float(sys.argv[3]) # 1.
-patterns = str(sys.argv[4]) # patterna
-dxy = str(sys.argv[5]) # False
+patterns = str(sys.argv[4]) # patterna, patternb, or patternc
+dxy = str(sys.argv[5]) # dxy or nodxy
 
 # Load the simulated data.
 var_pos = './sim_data/rep_id_{0}_var_pos.csv.gz'.format(rep)
@@ -461,6 +452,6 @@ intro_pos = './sim_data/rep_id_{0}_intro_pos.csv.gz'.format(rep)
 
 
 
-hmm(var_pos, geno_mat, intro_pos, rep, opt_iter_lim, w_threshold, patterns, dxy)    
+hmm(var_pos, geno_mat, intro_pos, rep, bw_limit, w_threshold, patterns, dxy)    
 
 # hmm(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
